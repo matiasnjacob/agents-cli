@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/**/*.test.js"
+    "test": "node --test tests"
   },
   "engines": {
     "node": ">=20"
