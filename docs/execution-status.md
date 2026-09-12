@@ -184,6 +184,19 @@ Estado: `in_review`
 - PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/17.
 - PER-21 quedó en `In Review`.
 
+## PER-22 — Mejoras de distribución de releases
+
+Estado: `in_review`
+
+- Worktree aislado: `.worktrees/t15-release-enhancements`.
+- Se agregó `install.sh` para resolver la última release estable mediante la API de GitHub, verificar `SHA256SUMS` e instalar el tarball globalmente; acepta `AGENTS_CLI_VERSION` y `AGENTS_CLI_REPOSITORY`.
+- Se agregaron badges de release/CI, `CHANGELOG.md` y documentación del instalador al README.
+- El workflow de release ahora publica una attestation de build provenance para el tarball usando permisos nativos de GitHub Actions.
+- Validaciones: 39 tests, typecheck, build, `bash -n install.sh`, checks del workflow y `git diff --check` pasan.
+- Commit: `6ba8d36 feat: improve GitHub release distribution`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/18.
+- PER-22 quedó en `In Review`.
+
 ## Próximo paso
 
 Revisar T12 y, tras su merge, continuar con T13: doctor y update. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable. La compatibilidad de Graphify queda como decisión/subtarea explícita.

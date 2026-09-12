@@ -84,7 +84,7 @@ Las etapas siguientes describen el alcance. Para ejecutarlas con Luna, seguir la
 - Qué implementación de Graphify usa el usuario.
 - Equipo/proyecto de Linear y tablero de Trello; seleccionables por proyecto, sin defaults privados publicados.
 - Nombre/registro del paquete y sistemas operativos objetivo. Propuesta inicial: macOS/Linux; confirmar alcance Windows antes de prometer soporte.
-- Distribución elegida para la primera versión: GitHub Releases con tarball y checksum. npm queda diferido hasta decidir cuenta, nombre y visibilidad.
+- Distribución elegida para la primera versión: GitHub Releases con tarball, checksum, installer Unix y build provenance. npm queda diferido hasta decidir cuenta, nombre y visibilidad.
 
 ## Ejecución por tareas pequeñas para Luna
 

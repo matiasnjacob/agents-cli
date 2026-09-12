@@ -1,3 +1,6 @@
+[![Latest release](https://img.shields.io/github/v/release/matiasnjacob/agents-cli?display_name=tag)](https://github.com/matiasnjacob/agents-cli/releases)
+[![CI](https://github.com/matiasnjacob/agents-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/matiasnjacob/agents-cli/actions/workflows/ci.yml)
+
 # agents-cli
 
 `agents-cli` initializes a new repository with a portable, auditable catalog
@@ -100,6 +103,22 @@ curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.1.0/SHA
 grep agents-cli-0.1.0.tgz SHA256SUMS | sha256sum --check
 npm install --global ./agents-cli-0.1.0.tgz
 ```
+
+For a one-command installation of the latest stable release on macOS or
+Linux, download and run the installer after reviewing it:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/matiasnjacob/agents-cli/main/install.sh -o install.sh
+less install.sh
+bash install.sh
+```
+
+Set `AGENTS_CLI_VERSION=0.1.0` to install a specific release, or
+`AGENTS_CLI_REPOSITORY=owner/repository` when using a compatible fork. The
+installer resolves stable releases through the GitHub API, downloads the
+tarball and `SHA256SUMS`, verifies the checksum, then runs `npm install --global`.
+It never parses the Releases HTML page. Windows PowerShell is not supported by
+this script yet.
 
 The release asset is a Node.js package, so Node.js 20 or newer and npm are
 required. The release workflow produces the tarball and checksum only after
@@ -205,7 +224,13 @@ git push origin v0.1.0
 
 The tag workflow runs `npm ci`, typecheck, build and the complete test suite.
 It then uploads `agents-cli-<version>.tgz` and `SHA256SUMS` to a GitHub
-Release. Review the generated assets before sharing a release.
+Release and publishes a GitHub build-provenance attestation for the tarball.
+Review the generated assets and attestation before sharing a release. The
+attestation can be verified with GitHub's attestation tooling, for example:
+
+```sh
+gh attestation verify agents-cli-0.1.0.tgz --repo matiasnjacob/agents-cli
+```
 
 The project does not publish to npm at this time. Publishing an unscoped npm
 package would make it publicly downloadable; a future private distribution
@@ -228,6 +253,8 @@ installation from a release tarball outside the source checkout.
 See [PLAN.md](PLAN.md), [docs/integration-validation.md](docs/integration-validation.md)
 and [docs/execution-status.md](docs/execution-status.md) for the roadmap,
 evidence and known limitations.
+
+Release history is maintained in [CHANGELOG.md](CHANGELOG.md).
 
 ## Contributing
 
