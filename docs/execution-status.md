@@ -117,3 +117,13 @@ Estado: `in_progress`
 - Se agregó un job summary con una tabla por test (`passed`/`failed`) y estado general.
 - Un fallo de cualquier test continúa haciendo fallar el job después de publicar el resumen.
 - Pendiente: validación final, commit, PR y pasar la tarea a `In Review`.
+
+## PER-12 — Corrección del parser del resumen CI
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t12-ci-summary-parser`.
+- Los logs de GitHub confirmaron que el runner emite TAP (`ok N - nombre`) al ejecutar `npm test` mediante `tee`.
+- Se reemplazó el parser dependiente de símbolos visuales por `scripts/ci-test-summary.mjs`, que parsea TAP y genera una fila por test.
+- La Action conserva el estado general y falla si no encuentra resultados o si el comando original falló.
+- Pendiente: validación final, commit, PR y pasar la tarea a `In Review`.
