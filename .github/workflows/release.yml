@@ -34,7 +34,7 @@ jobs:
         run: |
           mkdir -p release
           PACKAGE=$(npm pack --silent --pack-destination release)
-          sha256sum "release/$PACKAGE" > release/SHA256SUMS
+          (cd release && sha256sum "$PACKAGE" > SHA256SUMS)
       - name: Attest release tarball
         uses: actions/attest-build-provenance@v2
         with:

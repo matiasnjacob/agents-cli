@@ -21,4 +21,6 @@ test("release workflow requests provenance permissions and attests the tarball",
   assert.match(workflow, /attestations:\s*write/);
   assert.match(workflow, /actions\/attest-build-provenance@v2/);
   assert.match(workflow, /subject-path: release\/\*\.tgz/);
+  assert.match(workflow, /cd release && sha256sum [^\n]+ > SHA256SUMS/);
+  assert.doesNotMatch(workflow, /sha256sum ["']?release\//);
 });

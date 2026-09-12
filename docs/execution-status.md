@@ -197,6 +197,18 @@ Estado: `in_review`
 - PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/18.
 - PER-22 quedó en `In Review`.
 
+## PER-23 — Corrección del checksum de release
+
+Estado: `in_review`
+
+- Worktree aislado: `.worktrees/t15-release-checksum-fix`.
+- Se corrigió el workflow para generar `SHA256SUMS` desde el directorio de assets y usar únicamente el nombre del tarball.
+- El asset `SHA256SUMS` de v0.1.0 fue reemplazado y verificado correctamente junto con `agents-cli-0.1.0.tgz`.
+- Validaciones: 39 tests, typecheck, build, `bash -n install.sh`, regresión de formato y verificación del asset v0.1.0 pasan.
+- Commit: `55b1ea5 fix: publish verifiable release checksums`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/19.
+- PER-23 quedó en `In Review`.
+
 ## Próximo paso
 
 Revisar T12 y, tras su merge, continuar con T13: doctor y update. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable. La compatibilidad de Graphify queda como decisión/subtarea explícita.
