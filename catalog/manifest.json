@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "catalogVersion": "0.1.0",
+  "source": "user-global-agents",
+  "agents": [
+    { "id": "global-aws-specialist", "path": "agents/global-aws-specialist.md", "sourceId": "global-aws-specialist.md", "sourceSha256": "eb19c9a203f4a7ee8c6ad0aa67292d309475e7519fc08461130031e5d2d92565" },
+    { "id": "global-backend-developer", "path": "agents/global-backend-developer.md", "sourceId": "global-backend-developer.md", "sourceSha256": "ac024581029368cdc9d2fdc31ad6c68bea2d8ec2cb7155cd54594f2259c7fc93" },
+    { "id": "global-code-reviewer", "path": "agents/global-code-reviewer.md", "sourceId": "global-code-reviewer.md", "sourceSha256": "57516709814da070126b4c22cfb1d4c5f62d851e72c787d829f4fc099bbafb15" },
+    { "id": "global-frontend-developer", "path": "agents/global-frontend-developer.md", "sourceId": "global-frontend-developer.md", "sourceSha256": "ffe77a48880fc37d23b7e9aec8cff4c223113b9810690adccbf88444c089c8aa" },
+    { "id": "global-orchestrator", "path": "agents/global-orchestrator.md", "sourceId": "global-orchestrator.md", "sourceSha256": "ace5fc61ebce1c45698dd32470258fadfec4cf46a129e770cca298fb20c0b131" },
+    { "id": "global-qa-automator", "path": "agents/global-qa-automator.md", "sourceId": "global-qa-automator.md", "sourceSha256": "95d7e3affdf195715b7bcafec5f5dae12b8cdfaafbe5e6fb6a12a48699877362" },
+    { "id": "global-qa-manual", "path": "agents/global-qa-manual.md", "sourceId": "global-qa-manual.md", "sourceSha256": "716a73ff4ca9381f5ca9b0a0e417e6712bbc78bf755d3ebb098d4a086f04d90f" }
+  ],
+  "skills": [
+    { "id": "orchestrator-governance", "path": "skills/orchestrator-governance", "sourceId": "authored.generic.orchestrator-governance", "sourceSha256": "859abf152d7bc3a76092d37c88413794e7302366ed8a029c6ba7ca9954fc94a5" },
+    { "id": "git-feature-workflow", "path": "skills/git-feature-workflow", "sourceId": "authored.generic.git-feature-workflow", "sourceSha256": "05987b376b428057fe1870fafc0fd2af1a720bab2fd5f9ea96daf874c29e3114" },
+    { "id": "worktree-task-isolation", "path": "skills/worktree-task-isolation", "sourceId": "authored.generic.worktree-task-isolation", "sourceSha256": "8da930a4e9459317b5726a5bfe16efbae9352b8b97aa7a2fd2f20e457c776298" },
+    { "id": "code-review-pr", "path": "skills/code-review-pr", "sourceId": "authored.generic.code-review-pr", "sourceSha256": "32d8d3f826132224c6ef7c60cfc648d63cd9637db158c406fe104b9fdebb304e" },
+    { "id": "functional-review", "path": "skills/functional-review", "sourceId": "authored.generic.functional-review", "sourceSha256": "9ba3f7e9a3913d2c161acd12eec2c122d882550c18901ce16f6fbd815c04e68a" },
+    { "id": "developer-task-execution", "path": "skills/developer-task-execution", "sourceId": "authored.generic.developer-task-execution", "sourceSha256": "c45a45a1ddd72e2a9afe524d2d9affa8cf8aeaeed2eba9335eb54deeaebae082" }
+  ],
+  "excluded": {
+    "projectScopedSkillRecords": 123,
+    "reason": "Preserved for provenance review; not portable defaults until compatibility and licensing are reviewed.",
+    "agentStack": "Explicitly excluded by project scope."
+  },
+  "transformations": [
+    "Copied user-owned agent and authored skill content into repository-relative paths.",
+    "Removed source-machine absolute paths from manifest metadata; source identifiers are logical names only.",
+    "Excluded credentials, .env files, private keys, caches, histories, generated runtimes, and project-private configuration."
+  ]
+}
