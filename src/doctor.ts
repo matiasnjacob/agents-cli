@@ -11,7 +11,7 @@ export type DiagnosticStatus = "pass" | "warn" | "fail";
 export interface Diagnostic { name: string; status: DiagnosticStatus; message: string; }
 export interface DoctorReport { ok: boolean; checks: Diagnostic[]; }
 
-interface DoctorOptions { root: string; catalogRoot: string; env?: NodeJS.ProcessEnv; nodeVersion?: string; }
+export interface DoctorOptions { root: string; catalogRoot: string; env?: NodeJS.ProcessEnv; nodeVersion?: string; dockerAvailable?: boolean; }
 
 export async function runDoctor(options: DoctorOptions): Promise<DoctorReport> {
   const checks: Diagnostic[] = [];
@@ -23,7 +23,7 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorReport> {
   checks.push(await readable("catalog", join(options.catalogRoot, "manifest.json"), "Catalog manifest is available.", "Catalog manifest is missing or unreadable; reinstall agents-cli or set AGENTS_CLI_CATALOG_ROOT."));
   checks.push(await lockfileCheck(options.root));
   checks.push(await platformCheck(options.root));
-  checks.push(await dockerCheck(options.env ?? process.env));
+  checks.push(await dockerCheck(options.env ?? process.env, options.dockerAvailable));
   checks.push(identityCheck(options.env ?? process.env));
   return { ok: checks.every((check) => check.status !== "fail"), checks };
 }
@@ -61,8 +61,10 @@ async function platformCheck(root: string): Promise<Diagnostic> {
   return { name: "platform", status: "fail", message: "No supported platform manifest found; run init with --platform codex, opencode, or claude." };
 }
 
-async function dockerCheck(env: NodeJS.ProcessEnv): Promise<Diagnostic> {
+async function dockerCheck(env: NodeJS.ProcessEnv, dockerAvailable?: boolean): Promise<Diagnostic> {
   if (!env.AGENTS_CLI_MCP_PROFILE) return { name: "mcp", status: "warn", message: "MCP profile is not declared; set AGENTS_CLI_MCP_PROFILE to document the intended Docker MCP profile. Connectivity was not tested." };
+  if (dockerAvailable === true) return { name: "mcp", status: "pass", message: `Docker MCP profile '${env.AGENTS_CLI_MCP_PROFILE}' is declared and Docker is reachable; server/tool connectivity still requires an explicit MCP call.` };
+  if (dockerAvailable === false) return { name: "mcp", status: "fail", message: `Docker is unavailable for MCP profile '${env.AGENTS_CLI_MCP_PROFILE}'; start Docker Desktop and retry.` };
   try {
     await execFileAsync("docker", ["info", "--format", "{{.ServerVersion}}"]);
     return { name: "mcp", status: "pass", message: `Docker MCP profile '${env.AGENTS_CLI_MCP_PROFILE}' is declared and Docker is reachable; server/tool connectivity still requires an explicit MCP call.` };
