@@ -13,7 +13,7 @@ Publicar en `matiasnjacob/agents-cli` una CLI que inicialice repositorios con lo
 - Decisión confirmada: administrar GitHub y Linear mediante Docker MCP Toolkit/Gateway. No es requisito alojar las imágenes en Docker Hub; se admiten servidores remotos administrados por el Toolkit. Linear quedó autorizado en el almacén de Docker MCP; GitHub quedó configurado con secreto local.
 - El perfil `agents-cli` se conectó a Codex, OpenCode y Claude Code. La conexión de clientes quedó creada; falta verificar una llamada desde cada cliente.
 - `~/.agents` ya contiene siete roles canónicos: orchestrator, backend-developer, frontend-developer, aws-specialist, code-reviewer, qa-automator y qa-manual; adaptadores Codex/OpenCode, manifiestos de procedencia, skills y scripts `init-project.py`, `render-codex.py` y `worktree.py`.
-- No aparecieron referencias a Graphify en la búsqueda inicial de `~/.agents`; falta identificar la herramienta y su configuración actual.
+- La búsqueda inicial no encontró referencias en `~/.agents`, pero la herramienta local `graphify 0.9.48` quedó identificada y su CLI fue inspeccionada durante T12. Falta decidir si `agents-cli` la envuelve o solo documenta su uso.
 - Decisión confirmada: excluir agent-stack del alcance; no importar sus agentes ni mantener su revisión como dependencia.
 
 ## Diseño propuesto
