@@ -46,6 +46,18 @@ Estado: `done`
 - Se documentaron los scopes, scripts, hashes disponibles, reglas de portabilidad y exclusiones.
 - Entregable: `docs/catalog-inventory.md`.
 
+## T05 — Importar catálogo auditado
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t05-catalog-import`.
+- Se importaron los siete agentes en `catalog/agents/`.
+- Se importaron las seis skills genéricas authored en `catalog/skills/`.
+- Se creó `catalog/manifest.json` con rutas relativas, identificadores de fuente, hashes y exclusiones.
+- Las 123 variantes de skills con scope de proyecto quedaron fuera del catálogo portable por defecto y permanecen documentadas en T04.
+- Validaciones completadas: JSON válido, todas las rutas del manifiesto existen, hashes SHA-256 coinciden con las fuentes y no se detectaron credenciales, claves privadas ni rutas absolutas en el catálogo.
+- Listo para revisión en un PR; la exclusión de las variantes de proyecto queda explícita en el manifiesto.
+
 ## Próximo paso
 
-Resolver la limitación de identidad de GitHub MCP si es necesario y continuar con T05: importar el catálogo auditado en archivos portables. No crear issues ni repositorios automáticamente.
+Resolver la limitación de identidad de GitHub MCP si es necesario y cerrar T05 con sus validaciones. Después continuar con T06: contrato portable y esqueleto de la CLI. No crear issues ni repositorios automáticamente.
