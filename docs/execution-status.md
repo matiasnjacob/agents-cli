@@ -92,4 +92,5 @@ Estado: `in_progress`
 - Se agregaron casos para rutas absolutas POSIX/Windows, destinos no administrados, dry-run con conflicto, lockfile malformado y paths duplicados.
 - La suite pasó de 9 a 14 tests; la primera ejecución detectó y corrigió dos defectos reales del motor.
 - Se agregó `.github/workflows/ci.yml` para `pull_request` en eventos `opened`, `reopened` y `synchronize`, sin secretos externos.
+- La primera ejecución del workflow falló porque `node --test tests/**/*.test.js` dejó el glob sin expandir en Ubuntu; se corrigió el script a `node --test tests`, que permite el descubrimiento recursivo multiplataforma.
 - Pendiente: validación final, commit, PR y pasar la tarea a `In Review`.
