@@ -37,11 +37,24 @@ Sin plataforma, `init` pregunta primero por ella y después por skills/perfil y 
 
 Áreas previstas: `src/cli/`, `src/catalog/`, `src/adapters/{codex,opencode,claude}/`, `src/install/`, `src/mcp/`, `catalog/{agents,skills,workflows}/`, `schemas/`, `tests/`, `docs/` y `.github/workflows/`.
 
+## Identidades por agente
+
+Las integraciones externas deben usar identidades distinguibles por bot, separadas de la cuenta personal principal y seleccionadas por proveedor. Las credenciales se mantienen fuera del catálogo y nunca se publican.
+
+| Proveedor | Identidad inicial | Uso | Fuente local |
+| --- | --- | --- | --- |
+| Linear | `matiasnjorquestrator` (`matiasnj+orquestrator@gmail.com`) | Orquestación, stories y actualizaciones de proyecto | OAuth gestionado por Docker MCP Toolkit |
+| GitHub | `cli-code-reviewer-agent[bot]` | Commits, branches y PRs de automatización/revisión | GitHub App e installation token temporal |
+
+El catálogo debe modelar una identidad lógica por agente y proveedor, permitiendo agregar futuros aliases de Linear y GitHub Apps sin acoplar credenciales ni nombres de usuario a las instrucciones. La CLI debe usar la identidad seleccionada en cada operación, informar el actor efectivo antes de una mutación externa y registrar solo el alias, proveedor y alcance. No debe impersonar una cuenta humana mediante credenciales compartidas: debe autenticarse mediante OAuth, una GitHub App u otro mecanismo explícito del proveedor.
+
+La configuración de la GitHub App se toma únicamente desde variables locales (`GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID` o Client ID, `GITHUB_APP_PRIVATE_KEY_PATH`) y genera installation tokens efímeros. El `.env` y las claves privadas quedan fuera de Git. Docker MCP Toolkit puede usar el token temporal para el servidor GitHub; si el endpoint `/user` no funciona para installation tokens, se valida la identidad mediante la App y el acceso efectivo al repositorio.
+
 ## Etapas y criterios de aceptación
 
 Las etapas siguientes describen el alcance. Para ejecutarlas con Luna, seguir las tareas T01–T15 de la sección de ejecución; no implementar una etapa entera de una sola vez.
 
-1. **Cerrar identidad y conexiones.** Seleccionar o aislar la autenticación `matiasnjacob` para este trabajo; comprobar `gh api user`, identidad de commits y destino remoto antes del primer push. Inspeccionar el catálogo Docker actual para Linear y su mecanismo de autenticación. Configurar GitHub y Linear en un perfil dedicado y conectar el gateway al cliente elegido. Validar GitHub con identidad/repositorios y Linear con identidad/equipos, mediante lecturas. No reutilizar implícitamente la identidad de gh para el MCP. Criterio: evidencia de identidad correcta y llamadas exitosas por Docker, distinguiendo configuración de funcionamiento. OAuth puede necesitar interacción del usuario.
+1. **Cerrar identidad y conexiones.** Seleccionar o aislar la autenticación `matiasnjacob` para este trabajo; comprobar `gh api user`, identidad de commits y destino remoto antes del primer push. Configurar los aliases de bot definidos en la matriz de identidades y conservar credenciales fuera del repositorio. Inspeccionar el catálogo Docker actual para Linear y su mecanismo de autenticación. Configurar GitHub y Linear en un perfil dedicado y conectar el gateway al cliente elegido. Validar GitHub y Linear mediante lecturas, registrando el actor efectivo y sus límites. No reutilizar implícitamente la identidad personal de `gh` para el MCP. Criterio: evidencia de identidad correcta y llamadas exitosas por Docker, distinguiendo configuración de funcionamiento. OAuth puede necesitar interacción del usuario.
 
 2. **Inventariar y preservar agentes actuales.** Leer los siete roles, manifiestos, recursos de skills y scripts existentes; comparar con las ubicaciones globales de Claude, Codex y OpenCode. Registrar procedencia, hashes, dependencias, licencias y variantes por proyecto. Incluir todas las definiciones propias pertinentes; representar skills de plugins/sistema mediante dependencias de sus gestores cuando corresponda. No copiar credenciales, historiales, cachés ni reglas privadas de proyectos como defaults universales. Criterio: inventario trazable y diferencias explicadas respecto del origen.
 
@@ -90,15 +103,18 @@ Las etapas siguientes describen el alcance. Para ejecutarlas con Luna, seguir la
 
 **T01 — Registrar estado e identidad.** Dependencias: ninguna.
 Leer estado de la carpeta y autenticación sin imprimir tokens. Crear `docs/execution-status.md` y `docs/environment.md`. Preparar autenticación de trabajo con `matiasnjacob`, verificar login y documentar identidad de commits por separado. Inicializar Git local si todavía no existe; añadir `/.worktrees/` al ignore. No crear remoto todavía.
-Aceptación: identidad GitHub comprobada, Git local disponible y estado inicial documentado. Si autenticación está bloqueada, el inventario local puede continuar.
+Registrar también la matriz de identidades por bot y el alcance de cada proveedor; distinguir cuenta humana, alias Linear y GitHub App.
+Aceptación: identidad GitHub comprobada, Git local disponible, estado inicial documentado y actores externos identificados sin secretos. Si autenticación está bloqueada, el inventario local puede continuar.
 
 **T02 — Verificar/configurar MCP GitHub mediante Toolkit.** Dependencias: T01 para verificar cuenta.
 Leer ayuda de la versión instalada de Docker MCP, inspeccionar perfiles y preparar un perfil de proyecto sin sustituir perfiles existentes. Configurar GitHub y conectar el gateway al cliente de trabajo. Registrar instrucciones sin secretos en `docs/mcp.md`.
-Aceptación: llamada de identidad por el MCP devuelve `matiasnjacob` y una lectura de repositorios funciona. La autenticación de gh no sustituye esta prueba.
+Usar la GitHub App seleccionada para operaciones automatizadas y verificar el repositorio con un installation token. Si el servidor no puede resolver `/user` con ese token, registrar la limitación y verificar App, instalación, repositorio y permisos por endpoints compatibles.
+Aceptación: la identidad de la App y su acceso al repositorio quedan comprobados por el gateway; la autenticación de gh no sustituye esta prueba.
 
 **T03 — Configurar MCP Linear mediante Toolkit.** Dependencias: perfil de T02; independiente de la autenticación GitHub.
 Identificar Linear en el catálogo vigente, registrar tipo de servidor y autenticación, completar OAuth con el usuario si hace falta y añadirlo al perfil. Si no está disponible, documentar una configuración soportada por Toolkit antes de proponerla. No crear issues.
-Aceptación: lectura real de identidad/equipos mediante el gateway; evidencia en `docs/mcp.md`. Equipo/proyecto de destino puede elegirse más adelante.
+Autorizar el alias Linear seleccionado para el agente, empezando por `matiasnjorquestrator`; no usar implícitamente la cuenta humana `matiasnj`.
+Aceptación: lectura real de identidad/equipos mediante el gateway devuelve el alias seleccionado; evidencia en `docs/mcp.md`. Equipo/proyecto de destino puede elegirse más adelante.
 
 **T04 — Inventario canónico.** Dependencias: ninguna.
 Leer `~/.agents/README.md`, manifiestos y listado de agentes/skills. Comparar definiciones de las tres plataformas. Crear `docs/catalog-inventory.md` con origen, rol, recursos, licencia, dependencias y diferencias; calcular hashes en un manifiesto sin rutas personales distribuibles.
@@ -145,7 +161,7 @@ Ejecutar typecheck/test/build; empaquetar con `npm pack` e instalar el tarball e
 Aceptación: matriz de tres plataformas con evidencia, segunda inicialización sin diff, cambios previos conservados, funcionamiento MCP comprobado y cero validaciones obligatorias pendientes.
 
 **T15 — Publicar en GitHub.** Dependencias: T14, visibilidad y licencia resueltas.
-Revalidar cuenta `matiasnjacob`, revisar contenido preparado, crear o verificar `matiasnjacob/agents-cli`, configurar remoto y publicar. Verificar que CI termina correctamente y preparar release versionada. npm es un paso separado pendiente de decisión.
+Revalidar el actor efectivo de la GitHub App, revisar contenido preparado, crear o verificar `matiasnjacob/agents-cli`, configurar remoto y publicar mediante installation token. Verificar que CI termina correctamente y preparar release versionada. npm es un paso separado pendiente de decisión.
 Aceptación: propietario/URL correctos, CI verde y release instalable siguiendo README desde un repositorio nuevo. Registrar URL y versión; no dar esta tarea por hecha solo por crear el repositorio.
 
 ### Prompt para iniciar o retomar con Luna
