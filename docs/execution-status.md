@@ -83,3 +83,13 @@ Estado: `in_progress`
 ## Próximo paso
 
 Revisar T07 y, tras su merge, continuar con T08: adaptador Codex. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
+
+## PER-9 — Suite ampliada y CI de PR
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t07-qa-pr-ci`.
+- Se agregaron casos para rutas absolutas POSIX/Windows, destinos no administrados, dry-run con conflicto, lockfile malformado y paths duplicados.
+- La suite pasó de 9 a 14 tests; la primera ejecución detectó y corrigió dos defectos reales del motor.
+- Se agregó `.github/workflows/ci.yml` para `pull_request` en eventos `opened`, `reopened` y `synchronize`, sin secretos externos.
+- Pendiente: validación final, commit, PR y pasar la tarea a `In Review`.

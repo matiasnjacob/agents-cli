@@ -60,3 +60,43 @@ test("preserves unrelated configuration and rejects traversal", async () => {
   assert.equal(await readFile(join(root, "existing.json"), "utf8"), "keep\n");
   await assert.rejects(planInstall({ root, catalogVersion: "0.1.0", files: [{ path: "../outside", content: "nope" }] }), /Unsafe installation path/);
 });
+
+test("rejects absolute paths across POSIX and Windows notation", async () => {
+  const root = await project();
+  await assert.rejects(planInstall({ root, catalogVersion: "0.1.0", files: [{ path: "/tmp/outside", content: "nope" }] }), /Unsafe installation path/);
+  await assert.rejects(planInstall({ root, catalogVersion: "0.1.0", files: [{ path: "C:\\\\outside", content: "nope" }] }), /Unsafe installation path/);
+});
+
+test("reports an unmanaged destination as a conflict", async () => {
+  const root = await project();
+  await writeFile(join(root, "agent.md"), "owned by user\n");
+  const plan = await applyInstall({ root, catalogVersion: "0.1.0", files: [{ path: "agent.md", content: "managed\n" }] });
+  assert.deepEqual(plan.conflicts, ["agent.md"]);
+  await assert.rejects(access(join(root, LOCKFILE)));
+});
+
+test("dry-run reports conflicts without creating backups or lockfile", async () => {
+  const root = await project();
+  await applyInstall({ root, catalogVersion: "0.1.0", files: [{ path: "agent.md", content: "first\n" }] });
+  await writeFile(join(root, "agent.md"), "local\n");
+  const lockBefore = await readFile(join(root, LOCKFILE), "utf8");
+  const plan = await applyInstall({ root, catalogVersion: "0.1.0", dryRun: true, files: [{ path: "agent.md", content: "second\n" }] });
+  assert.deepEqual(plan.conflicts, ["agent.md"]);
+  await assert.rejects(access(join(root, ".agents-cli-backups")));
+  assert.equal(await readFile(join(root, LOCKFILE), "utf8"), lockBefore);
+});
+
+test("fails clearly when the lockfile is malformed", async () => {
+  const root = await project();
+  await writeFile(join(root, LOCKFILE), "not-json\n");
+  await assert.rejects(planInstall({ root, catalogVersion: "0.1.0", files: [{ path: "agent.md", content: "new\n" }] }), /Unexpected token/);
+});
+
+test("rejects duplicate destination paths", async () => {
+  const root = await project();
+  await assert.rejects(planInstall({
+    root,
+    catalogVersion: "0.1.0",
+    files: [{ path: "same.md", content: "one\n" }, { path: "same.md", content: "two\n" }],
+  }), /Duplicate installation path/);
+});

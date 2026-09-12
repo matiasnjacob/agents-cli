@@ -34,6 +34,7 @@ interface Lockfile {
 
 export async function planInstall(options: InstallOptions): Promise<InstallPlan> {
   const lock = await readLock(options.root);
+  const paths = new Set<string>();
   const creates: InstallFile[] = [];
   const updates: InstallFile[] = [];
   const unchanged: string[] = [];
@@ -42,6 +43,8 @@ export async function planInstall(options: InstallOptions): Promise<InstallPlan>
 
   for (const file of options.files) {
     assertSafePath(file.path);
+    if (paths.has(file.path)) throw new Error(`Duplicate installation path: ${file.path}`);
+    paths.add(file.path);
     const destination = join(options.root, file.path);
     const previousHash = lock?.files[file.path];
     let current: string | undefined;
@@ -108,7 +111,7 @@ export function sha256(content: string): string {
 }
 
 function assertSafePath(path: string): void {
-  if (!path || isAbsolute(path) || path.split(/[\\/]/).includes("..")) {
+  if (!path || isAbsolute(path) || /^[A-Za-z]:[\\/]/.test(path) || path.split(/[\\/]/).includes("..")) {
     throw new Error(`Unsafe installation path: ${path}`);
   }
   const normalized = relative(".", path);
