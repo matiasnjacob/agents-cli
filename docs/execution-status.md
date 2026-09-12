@@ -61,15 +61,25 @@ Estado: `done`
 
 ## T06 — Contrato y esqueleto CLI
 
-Estado: `in_progress`
+Estado: `done`
 
 - Worktree aislado: `.worktrees/t06-cli-skeleton`.
 - Se creó `package.json`, `package-lock.json` y configuración TypeScript con Node.js >=20.
 - Se definieron los contratos de plataforma (`codex`, `opencode`, `claude`) y tracker (`linear`, `trello`, `none`).
 - Se implementó el comando operativo `validate` y `--help`; la instalación, skills y adaptadores quedan para tareas posteriores.
 - Validaciones ejecutadas: `npm run typecheck`, `npm run build`, `npm test` (3 tests), ayuda, selección válida y rechazo de plataforma inválida.
-- Pendiente: revisión independiente y PR.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/5 (aprobado y mergeado).
+
+## T07 — Motor de instalación
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t07-install-engine`.
+- Se implementaron `planInstall` y `applyInstall` en `src/install/engine.ts`.
+- El motor soporta dry-run, lockfile `.agents-cli.lock.json`, hashes SHA-256, backups, conflictos, idempotencia y validación de rutas.
+- Se documentó recuperación ante fallos parciales en `docs/install-engine.md`.
+- Validaciones pendientes: typecheck, build, tests de instalación y revisión del diff.
 
 ## Próximo paso
 
-Revisar T06 y, tras su merge, continuar con T07: motor de instalación. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
+Revisar T07 y, tras su merge, continuar con T08: adaptador Codex. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
