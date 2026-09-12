@@ -84,6 +84,7 @@ Las etapas siguientes describen el alcance. Para ejecutarlas con Luna, seguir la
 - Qué implementación de Graphify usa el usuario.
 - Equipo/proyecto de Linear y tablero de Trello; seleccionables por proyecto, sin defaults privados publicados.
 - Nombre/registro del paquete y sistemas operativos objetivo. Propuesta inicial: macOS/Linux; confirmar alcance Windows antes de prometer soporte.
+- Distribución elegida para la primera versión: GitHub Releases con tarball y checksum. npm queda diferido hasta decidir cuenta, nombre y visibilidad.
 
 ## Ejecución por tareas pequeñas para Luna
 
@@ -161,7 +162,7 @@ Ejecutar typecheck/test/build; empaquetar con `npm pack` e instalar el tarball e
 Aceptación: matriz de tres plataformas con evidencia, segunda inicialización sin diff, cambios previos conservados, funcionamiento MCP comprobado y cero validaciones obligatorias pendientes.
 
 **T15 — Publicar en GitHub.** Dependencias: T14, visibilidad y licencia resueltas.
-Revalidar el actor efectivo de la GitHub App, revisar contenido preparado, crear o verificar `matiasnjacob/agents-cli`, configurar remoto y publicar mediante installation token. Verificar que CI termina correctamente y preparar release versionada. npm es un paso separado pendiente de decisión.
+Revalidar el actor efectivo de la GitHub App, revisar contenido preparado, crear o verificar `matiasnjacob/agents-cli`, configurar remoto y publicar mediante installation token. Verificar que CI termina correctamente y preparar releases versionadas con tarball y checksum mediante GitHub Actions. npm es un paso separado pendiente de decisión.
 Aceptación: propietario/URL correctos, CI verde y release instalable siguiendo README desde un repositorio nuevo. Registrar URL y versión; no dar esta tarea por hecha solo por crear el repositorio.
 
 ### Prompt para iniciar o retomar con Luna

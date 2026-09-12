@@ -171,6 +171,19 @@ Estado: `in_review`
 - PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/16.
 - PER-19 quedó en `In Review`.
 
+## PER-21 — README y GitHub Releases
+
+Estado: `in_review`
+
+- Worktree aislado: `.worktrees/t15-readme-github-releases`.
+- Se está reescribiendo el README en inglés con explicación del proyecto, los siete agentes, plataformas, skills, comandos, workflows, Graphify, identidades y troubleshooting operativo.
+- Se está agregando un workflow de GitHub Releases para tags `v*`, con validación, tarball `.tgz` y checksum `SHA256SUMS`.
+- npm permanece fuera del alcance; la distribución propuesta es GitHub Releases.
+- Validaciones: typecheck, build, 37 tests, `npm pack --dry-run`, checks de contenido y `git diff --check` pasan.
+- Commit: `c88a6a3 docs: document project and automate releases`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/17.
+- PER-21 quedó en `In Review`.
+
 ## Próximo paso
 
 Revisar T12 y, tras su merge, continuar con T13: doctor y update. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable. La compatibilidad de Graphify queda como decisión/subtarea explícita.
