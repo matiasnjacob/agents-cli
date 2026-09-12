@@ -143,6 +143,20 @@ Estado: `in_review`
 - PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/14.
 - PER-16 quedó en `In Review`.
 
+## T13 — Doctor y update seguro
+
+Estado: `in_review`
+
+- Worktree aislado: `.worktrees/t13-doctor-update`.
+- Se implementaron `doctor` y `update --dry-run`.
+- `doctor` comprueba Node.js, catálogo, lockfile, manifiesto de plataforma, disponibilidad de Docker para un perfil MCP declarado e identidad externa declarada; distingue configuración de conectividad y no muestra secretos.
+- `update --dry-run` detecta plataforma y skills desde el manifiesto generado, reconstruye el estado deseado desde el catálogo y reporta creates, updates, unchanged y conflicts sin escribir.
+- Los archivos editados por el usuario siguen siendo conflictos; no hay aplicación automática de updates.
+- Validaciones: `npm run typecheck`, `npm run build`, `npm test` (34 tests), `git diff --check`, smoke de `doctor` y `update --dry-run` sobre un proyecto temporal.
+- Commit: `0ea8e8f feat: add doctor and safe update preview`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/15.
+- PER-18 quedó en `In Review`.
+
 ## Próximo paso
 
 Revisar T12 y, tras su merge, continuar con T13: doctor y update. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable. La compatibilidad de Graphify queda como decisión/subtarea explícita.

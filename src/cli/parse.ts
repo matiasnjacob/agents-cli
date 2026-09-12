@@ -14,7 +14,9 @@ export type CommandResult =
   | { kind: "validate"; config: ValidatedConfig }
   | { kind: "init"; config: ValidatedConfig & { skills: string[]; yes: boolean; dryRun: boolean } }
   | { kind: "skills-list"; platform: Platform }
-  | { kind: "skills-add"; platform: Platform; skill: string; dryRun: boolean };
+  | { kind: "skills-add"; platform: Platform; skill: string; dryRun: boolean }
+  | { kind: "doctor" }
+  | { kind: "update"; dryRun: boolean };
 
 export function usage(): string {
   return [
@@ -24,11 +26,15 @@ export function usage(): string {
     "  agents-cli init --platform <codex|opencode|claude> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]",
     "  agents-cli skills list --platform <codex|opencode|claude>",
     "  agents-cli skills add <id> --platform <codex|opencode|claude> [--dry-run]",
+    "  agents-cli doctor",
+    "  agents-cli update --dry-run",
     "",
     "Commands:",
     "  validate  Validate a complete platform and tracker selection.",
     "  init      Install agents and selected skills into the current project.",
     "  skills    List or install selected skills.",
+    "  doctor    Diagnose local configuration without exposing secrets.",
+    "  update    Preview safe catalog updates and local conflicts.",
     "",
     "Options:",
     "  --platform <value>  Target agent runtime.",
@@ -69,6 +75,11 @@ export function parseCommandArgs(args: string[]): CommandResult {
     const platform = validPlatform(option(args, "--platform"));
     if (typeof platform !== "string") return platform;
     return { kind: "skills-add", platform, skill, dryRun: args.includes("--dry-run") };
+  }
+  if (command === "doctor") return { kind: "doctor" };
+  if (command === "update") {
+    if (!args.includes("--dry-run")) return { kind: "error", message: "update currently requires --dry-run; applying updates is not implemented." };
+    return { kind: "update", dryRun: true };
   }
   return { kind: "error", message: `Unknown command '${command}'.` };
 }
