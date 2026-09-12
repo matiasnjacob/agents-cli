@@ -38,16 +38,7 @@ jobs:
           TEST_OUTCOME: ${{ steps.tests.outcome }}
         run: |
           {
-            echo "## Test summary"
-            echo
-            echo "| Status | Test |"
-            echo "| --- | --- |"
-            sed -n -E \
-              -e 's/^[[:space:]]*✔ (.*) \([^)]*\)$/| passed | \1 |/p' \
-              -e 's/^[[:space:]]*✖ (.*) \([^)]*\)$/| failed | \1 |/p' \
-              test-output.txt
-            echo
-            echo "**Overall:** ${TEST_OUTCOME}"
+            TEST_OUTCOME="$TEST_OUTCOME" node scripts/ci-test-summary.mjs test-output.txt
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$TEST_OUTCOME" != "success" ]; then
             exit 1
