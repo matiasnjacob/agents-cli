@@ -1,0 +1,14 @@
+.agents/
+.codex/
+.worktrees/
+AGENTS.md
+opencode.json
+.github/
+.env*
+.secrets/
+*.pem
+src/
+tests/
+PLAN.md
+tsconfig.json
+node_modules/

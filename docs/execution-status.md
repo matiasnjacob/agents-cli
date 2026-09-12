@@ -157,6 +157,20 @@ Estado: `in_review`
 - PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/15.
 - PER-18 quedó en `In Review`.
 
+## T14 — Validación integral y documentación
+
+Estado: `in_review`
+
+- Worktree aislado: `.worktrees/t14-integration-validation`.
+- Se agregó una prueba de integración para Codex, OpenCode y Claude Code que verifica dry-run, init, idempotencia y preservación de archivos ajenos.
+- Se documentó la matriz de validación y se actualizó el README con los comandos disponibles, limitaciones y estado de publicación.
+- Validación actual: typecheck, build y matriz completa de 37 tests pasan.
+- `npm pack --dry-run` y la instalación/ejecución del tarball en un directorio temporal fuera del checkout pasan; `.npmignore` excluye auxiliares del worktree, fuentes y tests del artefacto.
+- Validación final: typecheck, build, 37 tests, `npm pack --dry-run` y ejecución del binario instalado desde tarball fuera del checkout pasan.
+- Commit: `6cdd89a test: validate packaged multi-platform installation`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/16.
+- PER-19 quedó en `In Review`.
+
 ## Próximo paso
 
 Revisar T12 y, tras su merge, continuar con T13: doctor y update. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable. La compatibilidad de Graphify queda como decisión/subtarea explícita.

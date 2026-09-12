@@ -1,6 +1,6 @@
 # agents-cli
 
-`agents-cli` will initialize new repositories with a portable catalog of the user’s agents, skills, and development workflows.
+`agents-cli` initializes new repositories with a portable catalog of the user’s agents, skills, and development workflows.
 
 The project targets Codex, OpenCode, and Claude Code through a canonical catalog and platform adapters. During `init`, users select a platform first and then install only the compatible skills and integrations for that platform.
 
@@ -29,4 +29,16 @@ agents-cli doctor
 agents-cli update --dry-run
 ```
 
-The CLI is under active development. Commands become available as the corresponding tasks in `PLAN.md` are completed.
+`doctor` reports local runtime, catalog, lockfile, platform, Docker MCP
+configuration, and external actor diagnostics without printing credentials.
+`update --dry-run` previews catalog changes and reports local conflicts without
+writing files. Applying updates is intentionally not available yet.
+
+The three platform adapters render the seven canonical agents. Skills from the
+portable catalog are installed after platform selection; external `skills.sh`
+sources remain deferred to a platform-specific resolver.
+
+See [docs/integration-validation.md](docs/integration-validation.md) for the
+validation matrix and [PLAN.md](PLAN.md) for the remaining roadmap. The
+package is not published to npm yet; package name, registry account, and
+release policy remain open decisions.

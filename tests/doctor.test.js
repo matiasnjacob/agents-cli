@@ -16,7 +16,7 @@ test("doctor reports actionable healthy local configuration without secrets", as
   await mkdir(join(root, ".codex/agents"), { recursive: true });
   await writeFile(join(root, ".codex/agents/manifest.json"), JSON.stringify({ platform: "codex", agents: ["one"], skills: [] }));
   await writeFile(join(root, ".agents-cli.lock.json"), JSON.stringify({ schemaVersion: 1, files: {} }));
-  const report = await runDoctor({ root, catalogRoot: catalog, env: { AGENTS_CLI_MCP_PROFILE: "agents-cli", AGENTS_CLI_ACTOR: "bot-alias" }, nodeVersion: "22.1.0" });
+  const report = await runDoctor({ root, catalogRoot: catalog, env: { AGENTS_CLI_MCP_PROFILE: "agents-cli", AGENTS_CLI_ACTOR: "bot-alias" }, nodeVersion: "22.1.0", dockerAvailable: true });
   assert.equal(report.ok, true);
   assert.deepEqual(report.checks.map(({ name }) => name), ["node", "catalog", "lockfile", "platform", "mcp", "identity"]);
   assert.match(report.checks.find(({ name }) => name === "mcp").message, /connectivity still requires/);
