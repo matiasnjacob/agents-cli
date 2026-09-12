@@ -95,18 +95,29 @@ Estado: `done`
 
 ## T09 — Adaptador OpenCode
 
-Estado: `in_progress`
+Estado: `done`
 
 - Worktree aislado: `.worktrees/t09-opencode-adapter`.
 - Se implementó `renderOpenCode` en `src/adapters/opencode/render.ts`.
 - El adaptador genera los siete agentes como Markdown OpenCode bajo `.opencode/agents/` y un manifiesto de plataforma.
 - Se preservan `description`, `mode` y `permission` del catálogo; las referencias a skills son relativas y seleccionables.
 - No se genera `opencode.json`, para no sobrescribir modelos, providers, MCP ni plugins existentes.
-- Pendiente: validación final, commit, PR y pasar PER-13 a `In Review`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/11 (aprobado y mergeado).
+
+## T10 — Adaptador Claude Code
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t10-claude-adapter`.
+- Se implementó `renderClaude` en `src/adapters/claude/render.ts`.
+- El adaptador genera los siete agentes bajo `.claude/agents/`, `CLAUDE.md` y un manifiesto de plataforma.
+- Se mapean herramientas soportadas, `permissionMode` y restricciones de delegación; las diferencias no enforceables quedan documentadas como limitaciones del runtime.
+- Las referencias a skills son relativas; las fuentes externas de `skills.sh` quedan para el instalador por plataforma.
+- Pendiente: validación final, commit, PR y pasar PER-14 a `In Review`.
 
 ## Próximo paso
 
-Revisar T09 y, tras su merge, continuar con T10: adaptador Claude Code. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
+Revisar T10 y, tras su merge, continuar con T11: init y selección de skills. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
 
 ## PER-9 — Suite ampliada y CI de PR
 
