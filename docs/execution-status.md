@@ -117,7 +117,7 @@ Estado: `done`
 
 ## T11 — Init y selección de skills
 
-Estado: `in_progress`
+Estado: `done`
 
 - Worktree aislado: `.worktrees/t11-init-skills`.
 - Se implementaron `init`, `skills list` y `skills add` con selección explícita de plataforma, tracker y skills.
@@ -126,11 +126,26 @@ Estado: `in_progress`
 - Las skills portables seleccionadas se copian a la ruta específica de Codex, OpenCode o Claude y se registran en `.agents-cli.lock.json`.
 - Smoke tests en directorios temporales: init real + segunda ejecución sin conflictos para las tres plataformas; fuente externa rechazada sin descarga.
 - Validaciones ejecutadas: `npm run typecheck`, `npm run build`, `npm test` (28 tests), smoke tests de las tres plataformas y `git diff --check`.
-- Pendiente: revisión final, commit, PR y pasar PER-15 a `In Review`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/13 (aprobado y mergeado).
+
+## T12 — Workflows de proyecto
+
+Estado: `in_review`
+
+- Worktree aislado: `.worktrees/t12-project-workflows`.
+- Se documentaron workflows portables para worktrees, stories de Linear y Trello, y selección explícita de tracker.
+- Se documentó Graphify `0.9.48` con instalación por plataforma, actualización, detección de pendientes, exclusión de `graphify-out/` y límites de integración.
+- Se agregó una suite de contrato para verificar plantillas, comandos y ausencia de rutas privadas.
+- La interfaz de Graphify fue verificada localmente; todavía no está decidido si `agents-cli` la envolverá o solo la documentará.
+- Subtarea abierta para esa decisión: PER-17, https://linear.app/matias-personal/issue/PER-17/t12-g-decide-graphify-integration-boundary.
+- Validaciones: `npm run typecheck`, `npm run build`, `npm test` (31 tests), `git diff --check`.
+- Commit: `e5bcdd7 docs: add project workflow catalog`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/14.
+- PER-16 quedó en `In Review`.
 
 ## Próximo paso
 
-Revisar T11 y, tras su merge, continuar con T12: workflows de proyecto, worktrees, Graphify y trackers. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
+Revisar T12 y, tras su merge, continuar con T13: doctor y update. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable. La compatibilidad de Graphify queda como decisión/subtarea explícita.
 
 ## PER-9 — Suite ampliada y CI de PR
 
