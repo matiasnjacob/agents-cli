@@ -83,7 +83,7 @@ Estado: `done`
 
 ## T08 — Adaptador Codex
 
-Estado: `in_progress`
+Estado: `done`
 
 - Worktree aislado: `.worktrees/t08-codex-adapter`.
 - Se implementó `renderCodex` en `src/adapters/codex/render.ts`.
@@ -91,11 +91,22 @@ Estado: `in_progress`
 - Las referencias a skills son relativas y se generan según la selección recibida; las fuentes externas de `skills.sh` siguen delegadas al instalador.
 - Se preservan las señales de sandbox y delegación del catálogo, documentando que las políticas de Codex/runtime son autoritativas.
 - Validaciones ejecutadas: `npm run typecheck`, `npm run build`, `npm test` (17 tests), `git diff --check`.
-- Pendiente: revisión independiente y PR.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/9 (aprobado y mergeado).
+
+## T09 — Adaptador OpenCode
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t09-opencode-adapter`.
+- Se implementó `renderOpenCode` en `src/adapters/opencode/render.ts`.
+- El adaptador genera los siete agentes como Markdown OpenCode bajo `.opencode/agents/` y un manifiesto de plataforma.
+- Se preservan `description`, `mode` y `permission` del catálogo; las referencias a skills son relativas y seleccionables.
+- No se genera `opencode.json`, para no sobrescribir modelos, providers, MCP ni plugins existentes.
+- Pendiente: validación final, commit, PR y pasar PER-13 a `In Review`.
 
 ## Próximo paso
 
-Revisar T08 y, tras su merge, continuar con T09: adaptador OpenCode. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
+Revisar T09 y, tras su merge, continuar con T10: adaptador Claude Code. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
 
 ## PER-9 — Suite ampliada y CI de PR
 
