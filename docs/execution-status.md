@@ -106,18 +106,31 @@ Estado: `done`
 
 ## T10 — Adaptador Claude Code
 
-Estado: `in_progress`
+Estado: `done`
 
 - Worktree aislado: `.worktrees/t10-claude-adapter`.
 - Se implementó `renderClaude` en `src/adapters/claude/render.ts`.
 - El adaptador genera los siete agentes bajo `.claude/agents/`, `CLAUDE.md` y un manifiesto de plataforma.
 - Se mapean herramientas soportadas, `permissionMode` y restricciones de delegación; las diferencias no enforceables quedan documentadas como limitaciones del runtime.
 - Las referencias a skills son relativas; las fuentes externas de `skills.sh` quedan para el instalador por plataforma.
-- Pendiente: validación final, commit, PR y pasar PER-14 a `In Review`.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/12 (aprobado y mergeado).
+
+## T11 — Init y selección de skills
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t11-init-skills`.
+- Se implementaron `init`, `skills list` y `skills add` con selección explícita de plataforma, tracker y skills.
+- `init` integra los tres adaptadores con el motor de instalación; `--dry-run`, conflictos e idempotencia se mantienen.
+- `skills list` muestra skills portables y `skills.sh` como fuente externa diferida; no descarga contenido externo automáticamente.
+- Las skills portables seleccionadas se copian a la ruta específica de Codex, OpenCode o Claude y se registran en `.agents-cli.lock.json`.
+- Smoke tests en directorios temporales: init real + segunda ejecución sin conflictos para las tres plataformas; fuente externa rechazada sin descarga.
+- Validaciones ejecutadas: `npm run typecheck`, `npm run build`, `npm test` (28 tests), smoke tests de las tres plataformas y `git diff --check`.
+- Pendiente: revisión final, commit, PR y pasar PER-15 a `In Review`.
 
 ## Próximo paso
 
-Revisar T10 y, tras su merge, continuar con T11: init y selección de skills. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
+Revisar T11 y, tras su merge, continuar con T12: workflows de proyecto, worktrees, Graphify y trackers. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
 
 ## PER-9 — Suite ampliada y CI de PR
 
