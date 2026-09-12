@@ -1,0 +1,21 @@
+{
+  "name": "agents-cli",
+  "version": "0.1.0",
+  "description": "Initialize projects with portable agent definitions and skills.",
+  "type": "module",
+  "bin": {
+    "agents-cli": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/**/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "typescript": "5.7.2"
+  }
+}

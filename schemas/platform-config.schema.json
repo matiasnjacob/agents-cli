@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agents-cli.dev/schemas/platform-config.schema.json",
+  "title": "Agents CLI platform configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["platform", "tracker"],
+  "properties": {
+    "platform": { "enum": ["codex", "opencode", "claude"] },
+    "tracker": { "enum": ["linear", "trello", "none"] }
+  }
+}

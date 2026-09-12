@@ -48,7 +48,7 @@ Estado: `done`
 
 ## T05 — Importar catálogo auditado
 
-Estado: `in_progress`
+Estado: `done`
 
 - Worktree aislado: `.worktrees/t05-catalog-import`.
 - Se importaron los siete agentes en `catalog/agents/`.
@@ -56,8 +56,20 @@ Estado: `in_progress`
 - Se creó `catalog/manifest.json` con rutas relativas, identificadores de fuente, hashes y exclusiones.
 - Las 123 variantes de skills con scope de proyecto quedaron fuera del catálogo portable por defecto y permanecen documentadas en T04.
 - Validaciones completadas: JSON válido, todas las rutas del manifiesto existen, hashes SHA-256 coinciden con las fuentes y no se detectaron credenciales, claves privadas ni rutas absolutas en el catálogo.
-- Listo para revisión en un PR; la exclusión de las variantes de proyecto queda explícita en el manifiesto.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/4 (aprobado y mergeado).
+- La exclusión de las variantes de proyecto queda explícita en el manifiesto.
+
+## T06 — Contrato y esqueleto CLI
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t06-cli-skeleton`.
+- Se creó `package.json`, `package-lock.json` y configuración TypeScript con Node.js >=20.
+- Se definieron los contratos de plataforma (`codex`, `opencode`, `claude`) y tracker (`linear`, `trello`, `none`).
+- Se implementó el comando operativo `validate` y `--help`; la instalación, skills y adaptadores quedan para tareas posteriores.
+- Validaciones ejecutadas: `npm run typecheck`, `npm run build`, `npm test` (3 tests), ayuda, selección válida y rechazo de plataforma inválida.
+- Pendiente: revisión independiente y PR.
 
 ## Próximo paso
 
-Resolver la limitación de identidad de GitHub MCP si es necesario y cerrar T05 con sus validaciones. Después continuar con T06: contrato portable y esqueleto de la CLI. No crear issues ni repositorios automáticamente.
+Revisar T06 y, tras su merge, continuar con T07: motor de instalación. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
