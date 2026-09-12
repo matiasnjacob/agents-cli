@@ -21,11 +21,13 @@ Estado: `in_progress`
 - Se conectó el perfil a `codex`, `opencode` y `claude-code`.
 - Se configuró localmente `github.personal_access_token` desde el token de `gh` para `matiasnjacob`; el valor no se imprimió ni se guardó en el repositorio.
 - El perfil se conectó globalmente a Codex, OpenCode y Claude Code; los tres clientes aparecen como `connected` en `docker mcp client ls`.
-- Pendiente: llamada funcional de identidad y lectura de repositorio a través del gateway MCP.
+- `github-official__get_file_contents` vía perfil `agents-cli` leyó correctamente `matiasnjacob/agents-cli/README.md`.
+- `github-official__get_me` no es compatible con el token de instalación y devuelve 403 para `/user`; la identidad de la App fue verificada por el JWT de la App y el acceso al repositorio por el token de instalación.
+- Pendiente: documentar esta limitación del endpoint de identidad o configurar un token de usuario de GitHub MCP si se requiere que `get_me` devuelva un usuario.
 
 ## T03 — Configurar MCP Linear mediante Toolkit
 
-Estado: `in_progress`
+Estado: `done`
 
 - Se añadió `linear` al perfil `agents-cli`.
 - Endpoint detectado por el catálogo: `https://mcp.linear.app/mcp`.
@@ -33,8 +35,17 @@ Estado: `in_progress`
 - El perfil se conectó globalmente a Codex, OpenCode y Claude Code; los tres clientes aparecen como `connected` en `docker mcp client ls`.
 - `linear__get_user` vía perfil `agents-cli` confirmó `matiasnjorquestrator`, `matiasnj+orquestrator@gmail.com`, administradora activa y miembro del equipo `Personal (PER)`.
 - Se publicó el status en PER-5 como comentario Linear `147f9b2e-7285-4dbf-8d6e-c6d89c1c917b`.
-- Pendiente: cerrar T03 con una lectura específica de equipos si se requiere como comprobación independiente; la pertenencia al equipo ya fue confirmada por la lectura de identidad.
+- `linear__get_user` confirmó la cuenta y el equipo `Personal (PER)` mediante el gateway.
+
+## T04 — Inventario canónico
+
+Estado: `done`
+
+- Se inventariaron los siete agentes globales actuales y sus adaptadores Codex.
+- Se registraron 129 directorios de skills, 123 registros de procedencia y seis skills genéricas authored.
+- Se documentaron los scopes, scripts, hashes disponibles, reglas de portabilidad y exclusiones.
+- Entregable: `docs/catalog-inventory.md`.
 
 ## Próximo paso
 
-Verificar las llamadas reales de GitHub y Linear desde el gateway y actualizar T02/T03 a `done` solo con evidencia. No crear issues ni repositorios todavía.
+Resolver la limitación de identidad de GitHub MCP si es necesario y continuar con T05: importar el catálogo auditado en archivos portables. No crear issues ni repositorios automáticamente.
