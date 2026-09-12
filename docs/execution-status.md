@@ -72,17 +72,30 @@ Estado: `done`
 
 ## T07 — Motor de instalación
 
-Estado: `in_progress`
+Estado: `done`
 
 - Worktree aislado: `.worktrees/t07-install-engine`.
 - Se implementaron `planInstall` y `applyInstall` en `src/install/engine.ts`.
 - El motor soporta dry-run, lockfile `.agents-cli.lock.json`, hashes SHA-256, backups, conflictos, idempotencia y validación de rutas.
 - Se documentó recuperación ante fallos parciales en `docs/install-engine.md`.
-- Validaciones pendientes: typecheck, build, tests de instalación y revisión del diff.
+- PR de implementación: https://github.com/matiasnjacob/agents-cli/pull/6 (aprobado y mergeado).
+- La suite ampliada de T07 y el CI de PR quedaron integrados por los PR #7 y #8.
+
+## T08 — Adaptador Codex
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t08-codex-adapter`.
+- Se implementó `renderCodex` en `src/adapters/codex/render.ts`.
+- El adaptador genera los siete roles bajo `.codex/agents/`, `.codex/AGENTS.md` y un manifiesto de plataforma.
+- Las referencias a skills son relativas y se generan según la selección recibida; las fuentes externas de `skills.sh` siguen delegadas al instalador.
+- Se preservan las señales de sandbox y delegación del catálogo, documentando que las políticas de Codex/runtime son autoritativas.
+- Validaciones ejecutadas: `npm run typecheck`, `npm run build`, `npm test` (17 tests), `git diff --check`.
+- Pendiente: revisión independiente y PR.
 
 ## Próximo paso
 
-Revisar T07 y, tras su merge, continuar con T08: adaptador Codex. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
+Revisar T08 y, tras su merge, continuar con T09: adaptador OpenCode. Las skills externas de `skills.sh` deben modelarse como fuentes resolubles durante la instalación por plataforma, no copiarse indiscriminadamente al catálogo portable.
 
 ## PER-9 — Suite ampliada y CI de PR
 
