@@ -94,3 +94,13 @@ Estado: `in_progress`
 - Se agregó `.github/workflows/ci.yml` para `pull_request` en eventos `opened`, `reopened` y `synchronize`, sin secretos externos.
 - La primera ejecución del workflow falló porque `node --test tests/**/*.test.js` dejó el glob sin expandir en Ubuntu; se corrigió el script a `node --test tests`, que permite el descubrimiento recursivo multiplataforma.
 - Pendiente: validación final, commit, PR y pasar la tarea a `In Review`.
+
+## PER-10 — Resumen por test en CI
+
+Estado: `in_progress`
+
+- Worktree aislado: `.worktrees/t10-ci-summary`.
+- La Action conserva el exit code original de `npm test` mediante `pipefail` y `continue-on-error` controlado.
+- Se agregó un job summary con una tabla por test (`passed`/`failed`) y estado general.
+- Un fallo de cualquier test continúa haciendo fallar el job después de publicar el resumen.
+- Pendiente: validación final, commit, PR y pasar la tarea a `In Review`.
