@@ -16,3 +16,9 @@ test("parses skills list and add commands", () => {
   assert.deepEqual(parseCommandArgs(["skills", "list", "--platform", "claude"]), { kind: "skills-list", platform: "claude" });
   assert.deepEqual(parseCommandArgs(["skills", "add", "git-feature-workflow", "--platform", "opencode"]), { kind: "skills-add", platform: "opencode", skill: "git-feature-workflow", dryRun: false });
 });
+
+test("parses doctor and only allows safe update preview", () => {
+  assert.deepEqual(parseCommandArgs(["doctor"]), { kind: "doctor" });
+  assert.deepEqual(parseCommandArgs(["update", "--dry-run"]), { kind: "update", dryRun: true });
+  assert.match(parseCommandArgs(["update"]).message, /requires --dry-run/);
+});
