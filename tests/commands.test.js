@@ -6,9 +6,9 @@ test("requires explicit platform and tracker for init", () => {
   assert.match(parseCommandArgs(["init", "--platform", "codex"]).message, /requires both/);
 });
 
-test("parses init skill selection and dry-run", () => {
-  assert.deepEqual(parseCommandArgs(["init", "--platform", "codex", "--tracker", "none", "--skills", "a,b", "--yes", "--dry-run"]), {
-    kind: "init", config: { platform: "codex", tracker: "none", skills: ["a", "b"], yes: true, dryRun: true },
+test("parses Pi init skill selection and dry-run", () => {
+  assert.deepEqual(parseCommandArgs(["init", "--platform", "pi", "--tracker", "none", "--skills", "a,b", "--yes", "--dry-run"]), {
+    kind: "init", config: { platform: "pi", tracker: "none", skills: ["a", "b"], yes: true, dryRun: true },
   });
 });
 

@@ -1,6 +1,6 @@
 import type { Platform, Tracker, ValidatedConfig } from "../contract.js";
 
-const platforms = ["codex", "opencode", "claude"] as const;
+const platforms = ["codex", "opencode", "claude", "pi"] as const;
 const trackers = ["linear", "trello", "none"] as const;
 
 type ParseResult =
@@ -22,10 +22,10 @@ export function usage(): string {
   return [
     "Usage:",
     "  agents-cli --help",
-    "  agents-cli validate --platform <codex|opencode|claude> --tracker <linear|trello|none>",
-    "  agents-cli init --platform <codex|opencode|claude> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]",
-    "  agents-cli skills list --platform <codex|opencode|claude>",
-    "  agents-cli skills add <id> --platform <codex|opencode|claude> [--dry-run]",
+    "  agents-cli validate --platform <codex|opencode|claude|pi> --tracker <linear|trello|none>",
+    "  agents-cli init --platform <codex|opencode|claude|pi> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]",
+    "  agents-cli skills list --platform <codex|opencode|claude|pi>",
+    "  agents-cli skills add <id> --platform <codex|opencode|claude|pi> [--dry-run]",
     "  agents-cli doctor",
     "  agents-cli update --dry-run",
     "",
@@ -94,7 +94,7 @@ function requiredConfig(args: string[], command: string): ValidatedConfig | { ki
 }
 
 function validPlatform(value: string | undefined): Platform | { kind: "error"; message: string } {
-  if (!value) return { kind: "error", message: "A platform is required: codex, opencode, or claude." };
+  if (!value) return { kind: "error", message: "A platform is required: codex, opencode, claude, or pi." };
   if (!platforms.includes(value as Platform)) return { kind: "error", message: `Invalid platform '${value}'.` };
   return value as Platform;
 }

@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["platform", "tracker"],
   "properties": {
-    "platform": { "enum": ["codex", "opencode", "claude"] },
+    "platform": { "enum": ["codex", "opencode", "claude", "pi"] },
     "tracker": { "enum": ["linear", "trello", "none"] }
   }
 }

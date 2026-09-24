@@ -12,6 +12,17 @@ and releases use semantic versioning.
 - Resolve the supported Graphify integration boundary.
 - Decide whether to provide a Homebrew Tap or standalone binaries.
 
+## [0.2.0] - 2026-09-24
+
+### Added
+
+- Pi adapter with seven project-local agent definitions, native Agent Skills paths, project instructions, and an isolated `subagent` extension.
+- Pi coverage in CLI validation, doctor, update detection, integration tests, and release documentation.
+
+### Fixed
+
+- Test discovery on Node.js versions that do not accept a directory as the `--test` entry point.
+
 ## [0.1.0] - 2026-09-12
 
 ### Added

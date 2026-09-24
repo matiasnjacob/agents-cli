@@ -1,4 +1,4 @@
-export const supportedPlatforms = ["codex", "opencode", "claude"] as const;
+export const supportedPlatforms = ["codex", "opencode", "claude", "pi"] as const;
 export const supportedTrackers = ["linear", "trello", "none"] as const;
 
 export type Platform = (typeof supportedPlatforms)[number];

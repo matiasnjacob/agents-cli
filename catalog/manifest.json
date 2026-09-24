@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "0.1.0",
+  "catalogVersion": "0.2.0",
   "source": "user-global-agents",
   "agents": [
     { "id": "global-aws-specialist", "path": "agents/global-aws-specialist.md", "sourceId": "global-aws-specialist.md", "sourceSha256": "eb19c9a203f4a7ee8c6ad0aa67292d309475e7519fc08461130031e5d2d92565" },

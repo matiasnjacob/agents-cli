@@ -2,7 +2,11 @@
 
 ## Objetivo
 
-Publicar en `matiasnjacob/agents-cli` una CLI que inicialice repositorios con los agentes globales actuales del usuario, skills seleccionables, reglas de worktrees, Graphify y workflows de stories para Linear o Trello. Soportar OpenCode, Codex y Claude Code mediante adaptadores de un catálogo canónico.
+Publicar en `matiasnjacob/agents-cli` una CLI que inicialice repositorios con los agentes globales actuales del usuario, skills seleccionables, reglas de worktrees, Graphify y workflows de stories para Linear o Trello. Soportar OpenCode, Codex, Claude Code y Pi mediante adaptadores de un catálogo canónico.
+
+## Ampliación Pi — 2026-09-24
+
+El release `v0.2.0` añade Pi como cuarta plataforma: roles bajo `.pi/agents`, skills nativas bajo `.pi/skills`, instrucciones de proyecto y una extensión de delegación aislada. La implementación y sus límites están documentados en `docs/pi.md`; la evidencia de validación está en `docs/integration-validation.md` y `docs/execution-status.md`.
 
 ## Verificación inicial — 2026-09-12
 

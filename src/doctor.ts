@@ -50,7 +50,7 @@ async function lockfileCheck(root: string): Promise<Diagnostic> {
 }
 
 async function platformCheck(root: string): Promise<Diagnostic> {
-  for (const platform of ["codex", "opencode", "claude"] as Platform[]) {
+  for (const platform of ["codex", "opencode", "claude", "pi"] as Platform[]) {
     const file = platform === "codex" ? ".codex/agents/manifest.json" : `.${platform}/agents/manifest.json`;
     try {
       const manifest = JSON.parse(await readFile(join(root, file), "utf8")) as { platform?: string; agents?: unknown[] };
@@ -58,7 +58,7 @@ async function platformCheck(root: string): Promise<Diagnostic> {
       return { name: "platform", status: "pass", message: `${platform} configuration found with ${manifest.agents.length} agents.` };
     } catch { /* Try the next supported platform. */ }
   }
-  return { name: "platform", status: "fail", message: "No supported platform manifest found; run init with --platform codex, opencode, or claude." };
+  return { name: "platform", status: "fail", message: "No supported platform manifest found; run init with --platform codex, opencode, claude, or pi." };
 }
 
 async function dockerCheck(env: NodeJS.ProcessEnv, dockerAvailable?: boolean): Promise<Diagnostic> {

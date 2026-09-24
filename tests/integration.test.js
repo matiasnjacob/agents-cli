@@ -16,7 +16,7 @@ async function run(args, cwd) {
   return JSON.parse(result.stdout);
 }
 
-for (const platform of ["codex", "opencode", "claude"]) {
+for (const platform of ["codex", "opencode", "claude", "pi"]) {
   test(`${platform} init is idempotent, preserves unrelated files, and supports dry-run`, async () => {
     const root = await mkdtemp(join(tmpdir(), `agents-cli-${platform}-`));
     await writeFile(join(root, "keep.txt"), "owned by project\n");
@@ -31,6 +31,11 @@ for (const platform of ["codex", "opencode", "claude"]) {
     assert.equal(second.conflicts.length, 0);
     assert.equal(second.creates.length, 0);
     assert.equal(second.updates.length, 0);
+    const update = await run(["update", "--dry-run"], root);
+    assert.equal(update.platform, platform);
+    assert.equal(update.conflicts.length, 0);
+    assert.equal(update.creates.length, 0);
+    assert.equal(update.updates.length, 0);
     assert.equal(await readFile(join(root, "keep.txt"), "utf8"), before);
   });
 }

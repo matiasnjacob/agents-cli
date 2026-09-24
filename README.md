@@ -10,7 +10,7 @@ project workflow guidance.
 It is designed for people who want the same development roles and conventions
 in every project without copying private home-directory configuration. The
 catalog preserves the current seven global agents and renders them for
-Codex, OpenCode, or Claude Code.
+Codex, OpenCode, Claude Code, or Pi.
 
 The project is currently distributed through GitHub Releases. npm
 publication is intentionally not enabled.
@@ -29,6 +29,7 @@ Depending on the selected platform, generated files are placed under:
 | Codex | `.codex/agents/*.toml` | `.codex/AGENTS.md` |
 | OpenCode | `.opencode/agents/*.md` | agent front matter and project files |
 | Claude Code | `.claude/agents/*.md` | `CLAUDE.md` |
+| Pi | `.pi/agents/*.md` + `.pi/extensions/agents-cli-subagent.ts` | `.pi/APPEND_SYSTEM.md` |
 
 The generated files are derived artifacts. Change the catalog or selected
 skills rather than adding credentials or machine-specific absolute paths to
@@ -72,6 +73,10 @@ Renders Markdown agents in `.claude/agents/` and project instructions in
 Code runtime does not support; those differences are documented rather than
 promised as hard restrictions.
 
+### Pi
+
+Renders project roles in `.pi/agents/`, native Agent Skills in `.pi/skills/`, and a project extension exposing a `subagent` tool. Each delegation runs in an isolated Pi subprocess that inherits the active model and thinking level. Pi project trust and generated tool allowlists remain authoritative; source `ask` and path-specific policies are documented intent rather than runtime enforcement. See [the Pi adapter guide](docs/pi.md).
+
 ## Skills
 
 Skills are selected after the platform is resolved. The six portable skills in
@@ -98,10 +103,10 @@ Download the `.tgz` asset from the [Releases](https://github.com/matiasnjacob/ag
 page, verify its checksum, and install it locally:
 
 ```sh
-curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.1.0/agents-cli-0.1.0.tgz
-curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.1.0/SHA256SUMS
-grep agents-cli-0.1.0.tgz SHA256SUMS | sha256sum --check
-npm install --global ./agents-cli-0.1.0.tgz
+curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.2.0/agents-cli-0.2.0.tgz
+curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.2.0/SHA256SUMS
+grep agents-cli-0.2.0.tgz SHA256SUMS | sha256sum --check
+npm install --global ./agents-cli-0.2.0.tgz
 ```
 
 For a one-command installation of the latest stable release on macOS or
@@ -113,7 +118,7 @@ less install.sh
 bash install.sh
 ```
 
-Set `AGENTS_CLI_VERSION=0.1.0` to install a specific release, or
+Set `AGENTS_CLI_VERSION=0.2.0` to install a specific release, or
 `AGENTS_CLI_REPOSITORY=owner/repository` when using a compatible fork. The
 installer resolves stable releases through the GitHub API, downloads the
 tarball and `SHA256SUMS`, verifies the checksum, then runs `npm install --global`.
@@ -144,6 +149,7 @@ created or required.
 agents-cli init --platform codex --tracker linear
 agents-cli init --platform opencode --tracker trello
 agents-cli init --platform claude --tracker none
+agents-cli init --platform pi --tracker none
 ```
 
 For non-interactive automation, add `--yes`. Preview changes first with
@@ -161,9 +167,9 @@ are reported as conflicts and are never silently discarded.
 
 ```text
 agents-cli --help
-agents-cli init --platform <codex|opencode|claude> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]
-agents-cli skills list --platform <codex|opencode|claude>
-agents-cli skills add <id> --platform <codex|opencode|claude> [--dry-run]
+agents-cli init --platform <codex|opencode|claude|pi> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]
+agents-cli skills list --platform <codex|opencode|claude|pi>
+agents-cli skills add <id> --platform <codex|opencode|claude|pi> [--dry-run]
 agents-cli doctor
 agents-cli update --dry-run
 ```
@@ -218,8 +224,8 @@ release assets.
 Releases are created from version tags:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 The tag workflow runs `npm ci`, typecheck, build and the complete test suite.
@@ -229,7 +235,7 @@ Review the generated assets and attestation before sharing a release. The
 attestation can be verified with GitHub's attestation tooling, for example:
 
 ```sh
-gh attestation verify agents-cli-0.1.0.tgz --repo matiasnjacob/agents-cli
+gh attestation verify agents-cli-0.2.0.tgz --repo matiasnjacob/agents-cli
 ```
 
 The project does not publish to npm at this time. Publishing an unscoped npm
@@ -246,7 +252,7 @@ npm test
 npm pack --dry-run
 ```
 
-The integration suite uses temporary repositories and verifies all three
+The integration suite uses temporary repositories and verifies all four
 platforms, dry-run behavior, idempotency, preservation of unrelated files and
 installation from a release tarball outside the source checkout.
 
