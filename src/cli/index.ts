@@ -6,6 +6,8 @@ import { dirname, join } from "node:path";
 import { renderCodex } from "../adapters/codex/render.js";
 import { renderOpenCode } from "../adapters/opencode/render.js";
 import { renderClaude } from "../adapters/claude/render.js";
+import { renderPi } from "../adapters/pi/render.js";
+import type { Platform } from "../contract.js";
 import { applyInstall } from "../install/engine.js";
 import { listSkills, readCatalog, renderSkillFiles } from "../catalog/skills.js";
 import { runDoctor } from "../doctor.js";
@@ -46,16 +48,14 @@ async function update(catalogRoot: string): Promise<void> {
   if (!installed) throw new Error("No platform manifest found; run init before update --dry-run.");
   const manifest = await readCatalog(catalogRoot);
   const skillFiles = await renderSkillFiles(catalogRoot, manifest, installed.skills, installed.platform);
-  const adapterFiles = installed.platform === "codex" ? await renderCodex({ catalogRoot, selectedSkills: installed.skills })
-    : installed.platform === "opencode" ? await renderOpenCode({ catalogRoot, selectedSkills: installed.skills })
-      : await renderClaude({ catalogRoot, selectedSkills: installed.skills });
+  const adapterFiles = await renderPlatform(installed.platform, catalogRoot, installed.skills);
   const plan = await applyInstall({ root, catalogVersion: manifest.catalogVersion, files: [...adapterFiles, ...skillFiles], dryRun: true });
   console.log(JSON.stringify({ platform: installed.platform, dryRun: true, creates: plan.creates.map(({ path }) => path), updates: plan.updates.map(({ path }) => path), unchanged: plan.unchanged, conflicts: plan.conflicts }, null, 2));
   if (plan.conflicts.length) process.exitCode = 1;
 }
 
-async function detectPlatform(root: string): Promise<{ platform: "codex" | "opencode" | "claude"; skills: string[] } | undefined> {
-  for (const platform of ["codex", "opencode", "claude"] as const) {
+async function detectPlatform(root: string): Promise<{ platform: Platform; skills: string[] } | undefined> {
+  for (const platform of ["codex", "opencode", "claude", "pi"] as const) {
     const file = platform === "codex" ? ".codex/agents/manifest.json" : `.${platform}/agents/manifest.json`;
     try {
       const value = JSON.parse(await readFile(join(root, file), "utf8")) as { platform?: string; skills?: unknown };
@@ -65,15 +65,18 @@ async function detectPlatform(root: string): Promise<{ platform: "codex" | "open
   return undefined;
 }
 
-async function install(platform: "codex" | "opencode" | "claude", tracker: string, skills: string[], dryRun: boolean, catalogRoot: string, includeAgents: boolean): Promise<void> {
+async function install(platform: Platform, tracker: string, skills: string[], dryRun: boolean, catalogRoot: string, includeAgents: boolean): Promise<void> {
   const manifest = await readCatalog(catalogRoot);
   const skillFiles = await renderSkillFiles(catalogRoot, manifest, skills, platform);
-  const adapterFiles = includeAgents
-    ? platform === "codex" ? await renderCodex({ catalogRoot, selectedSkills: skills })
-      : platform === "opencode" ? await renderOpenCode({ catalogRoot, selectedSkills: skills })
-        : await renderClaude({ catalogRoot, selectedSkills: skills })
-    : [];
+  const adapterFiles = includeAgents ? await renderPlatform(platform, catalogRoot, skills) : [];
   const plan = await applyInstall({ root: process.cwd(), catalogVersion: manifest.catalogVersion, files: [...adapterFiles, ...skillFiles], dryRun });
   console.log(JSON.stringify({ platform, tracker, dryRun, creates: plan.creates.map(({ path }) => path), updates: plan.updates.map(({ path }) => path), unchanged: plan.unchanged, conflicts: plan.conflicts }, null, 2));
   if (plan.conflicts.length) process.exitCode = 1;
+}
+
+async function renderPlatform(platform: Platform, catalogRoot: string, skills: string[]) {
+  if (platform === "codex") return renderCodex({ catalogRoot, selectedSkills: skills });
+  if (platform === "opencode") return renderOpenCode({ catalogRoot, selectedSkills: skills });
+  if (platform === "claude") return renderClaude({ catalogRoot, selectedSkills: skills });
+  return renderPi({ catalogRoot, selectedSkills: skills });
 }

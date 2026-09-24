@@ -243,3 +243,15 @@ Estado: `in_progress`
 - Se reemplazó el parser dependiente de símbolos visuales por `scripts/ci-test-summary.mjs`, que parsea TAP y genera una fila por test.
 - La Action conserva el estado general y falla si no encuentra resultados o si el comando original falló.
 - Pendiente: validación final, commit, PR y pasar la tarea a `In Review`.
+
+## Pi y release v0.2.0 — 2026-09-24
+
+Estado: `ready_for_review`
+
+- Se añadió `pi` como cuarta plataforma en CLI, schema, doctor, update y selección de skills.
+- El adaptador genera siete roles en `.pi/agents`, Agent Skills nativas en `.pi/skills`, instrucciones en `.pi/APPEND_SYSTEM.md` y una extensión `subagent` en `.pi/extensions`.
+- La extensión delega una tarea por proceso aislado, hereda modelo/thinking del padre, no persiste sesión, desactiva extensiones hijas y usa allowlists conservadoras de herramientas.
+- Se documentaron project trust, uso, mapeo de permisos y límites en `docs/pi.md`. Las políticas `ask` y reglas por ruta se declaran como intención, no enforcement.
+- Se preparó la versión `0.2.0` en package, lockfile, catálogo, README y changelog.
+- Validación: typecheck y build pasan; 43 tests pasan; `npm pack --dry-run` contiene el adaptador Pi; instalación del tarball, `init --platform pi`, `doctor` y startup `pi -a --help` pasan desde un directorio temporal.
+- No se realizó una llamada paga de modelo ni se creó tag/release. Publicar requiere revisión, commit, push del tag `v0.2.0` y CI verde.

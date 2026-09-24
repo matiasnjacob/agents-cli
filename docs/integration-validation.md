@@ -8,6 +8,8 @@ It is intentionally independent of external MCP credentials.
 | Codex init, dry-run, idempotency | Passed | `tests/integration.test.js` |
 | OpenCode init, dry-run, idempotency | Passed | `tests/integration.test.js` |
 | Claude Code init, dry-run, idempotency | Passed | `tests/integration.test.js` |
+| Pi init, dry-run, idempotency | Passed | `tests/integration.test.js` and `tests/pi-adapter.test.js` |
+| Pi startup with generated trusted project resources | Passed | `pi -a --help` from a temporary initialized project |
 | Existing unrelated files | Passed | `tests/integration.test.js` |
 | Typecheck and build | Passed | `npm run typecheck`, `npm run build` |
 | Full test suite | Passed | `npm test` |
@@ -16,7 +18,7 @@ It is intentionally independent of external MCP credentials.
 
 The test suite uses temporary directories and the repository catalog explicitly;
 it does not read the source user's home directory or require Codex, OpenCode,
-Claude Code, Linear, GitHub, or Docker MCP credentials.
+Claude Code, Pi model calls, Linear, GitHub, or Docker MCP credentials.
 
 ## Tarball check
 

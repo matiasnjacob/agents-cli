@@ -34,7 +34,9 @@ export async function renderSkillFiles(catalogRoot: string, manifest: CatalogMan
 function skillDestination(platform: string): string {
   if (platform === "codex") return ".codex/skills";
   if (platform === "opencode") return ".opencode/skills";
-  return ".claude/skills";
+  if (platform === "claude") return ".claude/skills";
+  if (platform === "pi") return ".pi/skills";
+  throw new Error(`Unsupported platform '${platform}'.`);
 }
 
 async function collect(source: string, destination: string, result: InstallFile[]): Promise<void> {
