@@ -39,7 +39,9 @@ test("release publishes the scoped package through OIDC after tests and before G
   assert.match(workflow, /node-version:\s*24/);
   assert.match(workflow, /registry-url:\s*https:\/\/registry\.npmjs\.org/);
   assert.match(workflow, /TAG_VERSION=.*GITHUB_REF_NAME/);
-  assert.match(workflow, /npm publish --access public/);
+  assert.match(workflow, /npm publish ["']?release\/.*outputs\.package.*--access public/);
+  assert.match(workflow, /below required 11\.5\.1/);
+  assert.match(workflow, /id:\s*package_release_asset/);
   assert.doesNotMatch(workflow, /NODE_AUTH_TOKEN|NPM_TOKEN/);
   assert.ok(workflow.indexOf("TAG_VERSION=") < workflow.indexOf("run: npm publish"));
   assert.ok(workflow.indexOf("run: npm test") < workflow.indexOf("run: npm publish"));
