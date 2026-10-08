@@ -15,6 +15,15 @@ test("installer resolves releases through the GitHub API and verifies checksums"
   assert.doesNotMatch(installer, /github\.com\/.*\.html/);
 });
 
+test("npm package uses the scoped identity and preserves the CLI executable", async () => {
+  const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+  assert.equal(manifest.name, "@matiasnjacob/agents-cli");
+  assert.equal(manifest.version, "0.4.0");
+  assert.equal(manifest.bin["agents-cli"], "dist/cli/index.js");
+  assert.equal(manifest.publishConfig.access, "public");
+  assert.equal(manifest.repository.url, "git+https://github.com/matiasnjacob/agents-cli.git");
+});
+
 test("release workflow requests provenance permissions and attests the tarball", async () => {
   const workflow = await readFile(join(root, ".github/workflows/release.yml"), "utf8");
   assert.match(workflow, /id-token:\s*write/);

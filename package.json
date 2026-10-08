@@ -1,7 +1,18 @@
 {
-  "name": "agents-cli",
-  "version": "0.3.0",
+  "name": "@matiasnjacob/agents-cli",
+  "version": "0.4.0",
   "description": "Initialize projects with portable agent definitions and skills.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matiasnjacob/agents-cli.git"
+  },
+  "homepage": "https://github.com/matiasnjacob/agents-cli#readme",
+  "bugs": {
+    "url": "https://github.com/matiasnjacob/agents-cli/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
     "agents-cli": "dist/cli/index.js"
