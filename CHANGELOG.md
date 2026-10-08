@@ -22,6 +22,13 @@ and releases use semantic versioning.
 - Publish tagged releases from GitHub Actions through npm Trusted Publishing (OIDC), alongside the existing GitHub Release tarball, checksum and provenance.
 - Document npm installation, one-time package bootstrap, publisher configuration and release recovery.
 
+## 0.4.1 — prepared for release
+
+### Added
+
+- Add `agents-cli --version` and `agents-cli -v` to report the installed package version.
+- List the interactive `setup` command in CLI help and document how to identify an outdated executable on `PATH`.
+
 ## [Unreleased]
 
 ### Planned

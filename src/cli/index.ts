@@ -32,7 +32,11 @@ if (result.kind === "error") {
 
 try {
   const catalogRoot = process.env.AGENTS_CLI_CATALOG_ROOT ?? join(dirname(fileURLToPath(import.meta.url)), "../../catalog");
-  if (result.kind === 'setup') console.log(JSON.stringify(await setupCommand(process.cwd(),catalogRoot,result),null,2));
+  if (result.kind === "version") {
+    const packageInfo = JSON.parse(await readFile(join(dirname(fileURLToPath(import.meta.url)), "../../package.json"), "utf8")) as { version: string };
+    console.log(packageInfo.version);
+  }
+  else if (result.kind === 'setup') console.log(JSON.stringify(await setupCommand(process.cwd(),catalogRoot,result),null,2));
   else if (result.kind === 'decision') await decisionCommand(result);
   else if (result.kind === 'suites-list') console.log(JSON.stringify(suites,null,2));
   else if (result.kind === 'mcp-list') console.log(JSON.stringify(mcpCatalog.map(m=>({...m,supported:m.platforms.includes(result.platform)})),null,2));
