@@ -237,4 +237,4 @@ git commit -m "docs: document npm installation and release setup"
 - [x] Run `npm run typecheck`, `npm run build`, `npm test`, `npm pack --dry-run`, the temporary tarball-install smoke test, and `git diff --check` on the final branch.
 - [x] Confirm `git status --short` contains no generated tarball or test project.
 - [x] Request an independent code review of the complete branch and address the important finding by publishing the exact attested tarball.
-- [ ] Push `feature/npm-publishing` and create a PR against `main`; do not publish to npm or create the `v0.4.0` tag until the PR is merged and the npm Trusted Publisher is configured.
+- [x] Push `feature/npm-publishing` and create PR [#22](https://github.com/matiasnjacob/agents-cli/pull/22) against `main`; leave npm publication and tag `v0.4.0` for after merge and Trusted Publisher setup.
