@@ -5,6 +5,7 @@ import type { InstallFile } from "../../install/engine.js";
 export interface OpenCodeRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
+  selectedAgents?: string[];
 }
 
 interface AgentSource {
@@ -17,7 +18,7 @@ interface AgentSource {
 
 export async function renderOpenCode(options: OpenCodeRenderOptions): Promise<InstallFile[]> {
   const agentRoot = join(options.catalogRoot, "agents");
-  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md")).sort();
+  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md") && (!options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")))).sort();
   const skills = options.selectedSkills ?? [];
   const agents = await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8"))));
   const files = agents.map((agent) => ({
@@ -52,7 +53,7 @@ function renderAgent(agent: AgentSource, skills: string[]): string {
   const skillReferences = skills.length
     ? `\n\n## Selected skill references\n\n${skills.map((skill) => `- .opencode/skills/${skill}/SKILL.md`).join("\n")}`
     : "\n\n## Selected skill references\n\nNo skills selected; the installer resolves external sources such as skills.sh separately.";
-  const body = `${agent.body}${skillReferences}\n`;
+  const body = `${agent.body.replace("Skills live in `~/.agents/skills`;", "Selected skills live in `.opencode/skills`;")}${skillReferences}\n`;
   return [
     "---",
     `description: ${JSON.stringify(agent.description)}`,

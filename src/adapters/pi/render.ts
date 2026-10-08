@@ -6,6 +6,7 @@ import { piSubagentExtension } from "./subagent-extension.js";
 export interface PiRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
+  selectedAgents?: string[];
 }
 
 interface AgentSource {
@@ -17,7 +18,7 @@ interface AgentSource {
 
 export async function renderPi(options: PiRenderOptions): Promise<InstallFile[]> {
   const agentRoot = join(options.catalogRoot, "agents");
-  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md")).sort();
+  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md") && (!options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")))).sort();
   const skills = options.selectedSkills ?? [];
   const agents = await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8"))));
   const files: InstallFile[] = agents.map((agent) => ({
