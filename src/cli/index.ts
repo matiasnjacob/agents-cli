@@ -15,6 +15,7 @@ import { readFile } from "node:fs/promises";
 import {setupCommand,executeSetup,readSetupConfig} from '../setup/command.js';
 import {suites,resolveConfig,type Manifest} from '../setup/config.js';
 import {mcpCatalog} from '../setup/mcp.js';
+import {decisionCommand} from '../decision/cli.js';
 
 const result = parseCommandArgs(process.argv.slice(2));
 
@@ -32,6 +33,7 @@ if (result.kind === "error") {
 try {
   const catalogRoot = process.env.AGENTS_CLI_CATALOG_ROOT ?? join(dirname(fileURLToPath(import.meta.url)), "../../catalog");
   if (result.kind === 'setup') console.log(JSON.stringify(await setupCommand(process.cwd(),catalogRoot,result),null,2));
+  else if (result.kind === 'decision') await decisionCommand(result);
   else if (result.kind === 'suites-list') console.log(JSON.stringify(suites,null,2));
   else if (result.kind === 'mcp-list') console.log(JSON.stringify(mcpCatalog.map(m=>({...m,supported:m.platforms.includes(result.platform)})),null,2));
   else if (result.kind === "validate") console.log(JSON.stringify(result.config, null, 2));

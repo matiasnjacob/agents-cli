@@ -1,5 +1,5 @@
 import {readFile} from 'node:fs/promises';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
 import {readCatalog} from '../catalog/skills.js';
 import {applyInstall} from '../install/engine.js';
 import {runDoctor} from '../doctor.js';
@@ -8,14 +8,14 @@ import {prepareSetup} from './install.js';
 import {collectAnswers,terminalPrompts} from './wizard.js';
 export async function readSetupConfig(root:string,catalogRoot:string,file='agents-cli.config.json'):Promise<SetupConfig|undefined> {
   let raw:string;
-  try {raw=await readFile(join(root,file),'utf8');} catch(e) {if ((e as NodeJS.ErrnoException).code==='ENOENT') return;throw e;}
+  try {raw=await readFile(resolve(root,file),'utf8');} catch(e) {if ((e as NodeJS.ErrnoException).code==='ENOENT') return;throw e;}
   return resolveConfig(JSON.parse(raw),await readCatalog(catalogRoot) as Manifest);
 }
 export async function executeSetup(root:string,catalogRoot:string,config:SetupConfig,dryRun:boolean) {
   const manifest=await readCatalog(catalogRoot);
   const prepared=await prepareSetup(root,catalogRoot,config);
   const plan=await applyInstall({root,catalogVersion:manifest.catalogVersion,files:prepared.files,dryRun});
-  const report={config,platform:config.platform,dryRun,creates:plan.creates.map(f=>f.path),updates:plan.updates.map(f=>f.path),unchanged:plan.unchanged,conflicts:plan.conflicts,pending:prepared.pending};
+  const report={config,platform:config.platform,dryRun,creates:plan.creates.map(f=>f.path),updates:plan.updates.map(f=>f.path),removes:plan.removes.map(f=>f.path),unchanged:plan.unchanged,conflicts:plan.conflicts,pending:prepared.pending};
   if (plan.conflicts.length) process.exitCode=1;
   return report;
 }

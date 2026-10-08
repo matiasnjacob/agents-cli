@@ -9,6 +9,7 @@ export interface InstallFile {
   content: string;
   /** Hash of the exact user configuration read and merged by a resolver. */
   expectedHash?: string;
+  remove?: boolean;
 }
 
 export interface InstallOptions {
@@ -22,6 +23,7 @@ export interface InstallOptions {
 export interface InstallPlan {
   creates: InstallFile[];
   updates: InstallFile[];
+  removes: InstallFile[];
   unchanged: string[];
   conflicts: string[];
   lockfile: InstallFile;
@@ -35,10 +37,12 @@ interface Lockfile {
 }
 
 export async function planInstall(options: InstallOptions): Promise<InstallPlan> {
+  await assertNoSymlinks(options.root,LOCKFILE);
   const lock = await readLock(options.root);
   const paths = new Set<string>();
   const creates: InstallFile[] = [];
   const updates: InstallFile[] = [];
+  const removes: InstallFile[] = [];
   const unchanged: string[] = [];
   const conflicts: string[] = [];
   const backups: string[] = [];
@@ -57,7 +61,11 @@ export async function planInstall(options: InstallOptions): Promise<InstallPlan>
       if (!isMissingFile(error)) throw error;
     }
 
-    if (current === undefined) {
+    if (file.remove) {
+      if (current===undefined) unchanged.push(file.path);
+      else if (previousHash!==undefined && sha256(current)===previousHash) {removes.push(file);backups.push(file.path);}
+      else conflicts.push(file.path);
+    } else if (current === undefined) {
       creates.push(file);
     } else if (current === file.content) {
       unchanged.push(file.path);
@@ -75,12 +83,14 @@ export async function planInstall(options: InstallOptions): Promise<InstallPlan>
     catalogVersion: options.catalogVersion,
     files: {
       ...(lock?.files ?? {}),
-      ...Object.fromEntries(options.files.map((file) => [file.path, sha256(file.content)])),
+      ...Object.fromEntries(options.files.filter(file=>!file.remove).map((file) => [file.path, sha256(file.content)])),
     },
   };
+  for (const file of options.files) if (file.remove) delete nextLock.files[file.path];
   return {
     creates,
     updates,
+    removes,
     unchanged,
     conflicts,
     backups,
@@ -93,7 +103,7 @@ export async function applyInstall(options: InstallOptions): Promise<InstallPlan
   if (options.dryRun || plan.conflicts.length > 0) return plan;
 
   const backupDir = join(options.root, ".agents-cli-backups", (options.now ?? new Date()).toISOString().replaceAll(":", "-"));
-  const changed = [...plan.updates, ...plan.creates, plan.lockfile];
+  const changed = [...plan.updates, ...plan.creates, ...plan.removes, plan.lockfile];
   const originals = new Map<string, string | undefined>();
   for (const file of changed) {
     await assertNoSymlinks(options.root, file.path);
@@ -103,25 +113,30 @@ export async function applyInstall(options: InstallOptions): Promise<InstallPlan
   for (const path of plan.backups) {
     const source = join(options.root, path);
     const backup = join(backupDir, path);
+    await assertNoSymlinks(options.root,relative(options.root,backup));
     await mkdir(dirname(backup), { recursive: true });
     await cp(source, backup);
   }
   const written: string[]=[];
   let temporary: string | undefined;
+  let temporaryOwned=false;
   try {
   for (const file of changed) {
     await assertNoSymlinks(options.root, file.path);
     const destination = join(options.root, file.path);
     await mkdir(dirname(destination), { recursive: true });
+    if (file.remove) {await unlink(destination);written.push(file.path);continue;}
     temporary = `${destination}.agents-cli-tmp`;
     await writeFile(temporary, file.content, {encoding:"utf8",flag:'wx'});
+    temporaryOwned=true;
     await rename(temporary, destination);
     temporary=undefined;
+    temporaryOwned=false;
     written.push(file.path);
   }
   } catch (error) {
     const recovery: string[]=[];
-    if (temporary) try { await unlink(temporary); } catch { /* No file was created. */ }
+    if (temporary && temporaryOwned) try { await unlink(temporary); } catch { /* Report recovery below. */ }
     for (const path of written.reverse()) {
       try {
         await assertNoSymlinks(options.root,path);

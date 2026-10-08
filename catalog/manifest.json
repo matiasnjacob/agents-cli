@@ -7,7 +7,7 @@
       "id": "global-aws-specialist",
       "path": "agents/global-aws-specialist.md",
       "sourceId": "global-aws-specialist.md",
-      "sourceSha256": "eb19c9a203f4a7ee8c6ad0aa67292d309475e7519fc08461130031e5d2d92565",
+      "sourceSha256": "f0d728c4ebf286e00a4a13ccbab6f52ceccdc3d91f8f07dcfb296a388c392125",
       "requiredSkills": [
         "worktree-task-isolation"
       ],
@@ -17,7 +17,7 @@
       "id": "global-backend-developer",
       "path": "agents/global-backend-developer.md",
       "sourceId": "global-backend-developer.md",
-      "sourceSha256": "ac024581029368cdc9d2fdc31ad6c68bea2d8ec2cb7155cd54594f2259c7fc93",
+      "sourceSha256": "9a332a57999f5bc5ce72057f174606f248718c562c0aac40d6d1fe531e297079",
       "requiredSkills": [
         "developer-task-execution",
         "git-feature-workflow",
@@ -29,7 +29,7 @@
       "id": "global-code-reviewer",
       "path": "agents/global-code-reviewer.md",
       "sourceId": "global-code-reviewer.md",
-      "sourceSha256": "57516709814da070126b4c22cfb1d4c5f62d851e72c787d829f4fc099bbafb15",
+      "sourceSha256": "4c67aaccb75472b3246241fe24baf6d488b6f6ceb6413399bda7e958ed45259e",
       "requiredSkills": [
         "code-review-pr",
         "worktree-task-isolation"
@@ -40,7 +40,7 @@
       "id": "global-frontend-developer",
       "path": "agents/global-frontend-developer.md",
       "sourceId": "global-frontend-developer.md",
-      "sourceSha256": "ffe77a48880fc37d23b7e9aec8cff4c223113b9810690adccbf88444c089c8aa",
+      "sourceSha256": "38d60982ddfe13bd4487d616fd55159c5c4759d16bf059a28a701e27a98c2f9a",
       "requiredSkills": [
         "developer-task-execution",
         "git-feature-workflow",
@@ -52,7 +52,7 @@
       "id": "global-orchestrator",
       "path": "agents/global-orchestrator.md",
       "sourceId": "global-orchestrator.md",
-      "sourceSha256": "ace5fc61ebce1c45698dd32470258fadfec4cf46a129e770cca298fb20c0b131",
+      "sourceSha256": "7dea28d8bb6eb2dfc0455d5e028b29a22b380d4f861e0c6aee661fc229501ca7",
       "requiredSkills": [
         "orchestrator-governance",
         "worktree-task-isolation"
@@ -63,7 +63,7 @@
       "id": "global-qa-automator",
       "path": "agents/global-qa-automator.md",
       "sourceId": "global-qa-automator.md",
-      "sourceSha256": "95d7e3affdf195715b7bcafec5f5dae12b8cdfaafbe5e6fb6a12a48699877362",
+      "sourceSha256": "e1a1f1f68ec31d81f19818ded437414f0f776eccf61299537d910a11e36391ad",
       "requiredSkills": [
         "git-feature-workflow",
         "worktree-task-isolation"
@@ -74,7 +74,7 @@
       "id": "global-qa-manual",
       "path": "agents/global-qa-manual.md",
       "sourceId": "global-qa-manual.md",
-      "sourceSha256": "716a73ff4ca9381f5ca9b0a0e417e6712bbc78bf755d3ebb098d4a086f04d90f",
+      "sourceSha256": "4019e6e6e50042d3887befc59545feef4102d8467e6d5f2f6f8bfbbc70445d4a",
       "requiredSkills": [
         "functional-review"
       ],

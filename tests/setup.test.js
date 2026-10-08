@@ -43,3 +43,14 @@ test('prepared setup writes configuration and only selected roles and is idempot
   assert.equal((await readdir(join(root,'.codex/agents'))).includes('global-aws-specialist.toml'),false);
   assert.equal(JSON.parse(await readFile(join(root,'agents-cli.config.json'),'utf8')).suite,'backend');
 });
+test('changing suite removes only unchanged managed roles and preserves edited roles as conflicts',async()=>{
+  const {resolveConfig}=await import('../dist/setup/config.js');
+  const {prepareSetup}=await import('../dist/setup/install.js');
+  const {applyInstall}=await import('../dist/install/engine.js');
+  const root=await mkdtemp(join(tmpdir(),'suite-change-'));
+  const first=await prepareSetup(root,catalogRoot,resolveConfig(input,manifest));
+  await applyInstall({root,catalogVersion:'test',files:first.files});
+  const second=await prepareSetup(root,catalogRoot,resolveConfig({...input,suite:'review-qa'},manifest));
+  await applyInstall({root,catalogVersion:'test',files:second.files});
+  assert.equal((await readdir(join(root,'.codex/agents'))).includes('global-backend-developer.toml'),false);
+});

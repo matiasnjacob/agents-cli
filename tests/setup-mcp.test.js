@@ -42,3 +42,19 @@ test('write failure restores previous files and removes newly created files',asy
   assert.equal(await readFile(join(root,'a'),'utf8'),'old');
   await assert.rejects(access(join(root,'created')));
 });
+test('a preexisting temporary file is not removed when exclusive write fails',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'temp-owned-'));
+  await writeFile(join(root,'agent.md.agents-cli-tmp'),'user-owned');
+  await assert.rejects(applyInstall({root,catalogVersion:'test',files:[{path:'agent.md',content:'new'}]}));
+  assert.equal(await readFile(join(root,'agent.md.agents-cli-tmp'),'utf8'),'user-owned');
+});
+test('MCP configuration is repeatable for every native platform without secret expansion',async()=>{
+  const {prepareMcp}=await import('../dist/setup/mcp.js');
+  for (const platform of ['codex','claude','opencode']) {
+    const root=await mkdtemp(join(tmpdir(),'mcp-repeat-')),config={platform,mcps:['github','linear','jev']};
+    const one=await prepareMcp(root,config);await applyInstall({root,catalogVersion:'test',files:one.files});
+    const two=await prepareMcp(root,config);const result=await applyInstall({root,catalogVersion:'test',files:two.files});
+    assert.equal(result.updates.length,0);assert.equal(result.conflicts.length,0);
+    assert.equal(one.files.some(f=>f.content.includes('GITHUB_TOKEN')),true);
+  }
+});
