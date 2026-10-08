@@ -7,11 +7,11 @@ import { renderPi } from '../adapters/pi/render.js';
 import { readCatalog, renderSkillFiles } from '../catalog/skills.js';
 import {sha256,assertNoSymlinks,LOCKFILE, type InstallFile } from '../install/engine.js';
 import { skillIds, type SetupConfig } from './config.js';
-import {prepareMcp} from './mcp.js';
+import {mcpCatalog,prepareMcp} from './mcp.js';
 import {resolveExternalSkill} from './external.js';
 export async function prepareSetup(root:string,catalogRoot:string,config:SetupConfig): Promise<{files:InstallFile[];pending:string[]}> {
   const render={codex:renderCodex,claude:renderClaude,opencode:renderOpenCode,pi:renderPi}[config.platform];
-  const files=await render({catalogRoot,selectedAgents:config.agents,selectedSkills:skillIds(config),...(config.platform==='claude'?{selectedMcpServers:config.mcps.map(id=>`agents-cli-${id}`)}:{})});
+  const files=await render({catalogRoot,selectedAgents:config.agents,selectedSkills:skillIds(config),...(config.platform==='claude'?{selectedMcpServers:config.mcps.filter(id=>mcpCatalog.find(entry=>entry.id===id)?.platforms.includes('claude')).map(id=>`agents-cli-${id}`)}:{})});
   files.push(...await renderSkillFiles(catalogRoot,await readCatalog(catalogRoot),config.skills.filter((s):s is string=>typeof s==='string'),config.platform));
   const provenance=[];
   for (const source of config.skills) if (typeof source!=='string') {

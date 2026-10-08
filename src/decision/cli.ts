@@ -12,7 +12,8 @@ export async function decisionCommand(options:{command:string;config?:string;inp
   if (options.command==='evaluate') {
     if (!options.dataset||!options.output) throw new Error('Evaluation requires --dataset and --output.');
     if (config.mode==='off') throw new Error('Enable JEV explicitly in --config to run a paid evaluation.');
-    const cases=validateDataset(await jsonFile(options.dataset));
+    const key=(options.env??process.env)[config.apiKeyEnv];
+    const cases=validateDataset(await jsonFile(options.dataset),config.maxInputBytes,key);
     const output=await open(options.output,'wx',0o600);
     let complete=false;
     try {

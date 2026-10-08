@@ -21,7 +21,7 @@ export async function evaluateDataset(value:unknown,client:Evaluator,thresholds:
   return {schemaVersion:1,complete:rows.every(r=>!r.unavailable),partitions:{calibration:summarize('calibration'),evaluation:summarize('evaluation')},rows};
 }
 
-export function validateDataset(value:unknown):Case[] {
+export function validateDataset(value:unknown,maxInputBytes=262144,secret?:string):Case[] {
   if (!Array.isArray(value)||!value.length||value.length>500) throw new Error('Dataset requires 1–500 cases.');
   const ids=new Set<string>();
   const cases=value.map(v=>{
@@ -32,7 +32,9 @@ export function validateDataset(value:unknown):Case[] {
     if (!valid(c.expected)||(c.baseline!==undefined&&!valid(c.baseline))) throw new Error('Invalid expected/baseline label.');
     const item=c as unknown as Case;
     const request=buildQuestions(item.tool,item.input);
-    if (Buffer.byteLength(JSON.stringify({state:request.state,questions:request.questions}))>262144) throw new Error('Decision input exceeds size limit.');
+    const serialized=JSON.stringify({state:request.state,questions:request.questions});
+    if (Buffer.byteLength(serialized)>maxInputBytes) throw new Error('Decision input exceeds size limit.');
+    if (secret && serialized.includes(secret)) throw new Error('Decision state contains the configured API secret.');
     return item;
   });
   return cases;

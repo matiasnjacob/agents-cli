@@ -40,6 +40,13 @@ test('evaluator distinguishes calibration/evaluation and unavailable from mistak
   assert.equal(report.partitions.evaluation.unavailable,1);
   assert.equal(report.partitions.evaluation.accuracy,null);
 });
+test('evaluation preflight applies configured size limits and API-secret checks to every case',async()=>{
+  const {validateDataset}=await import('../dist/decision/evaluate.js');
+  const candidate={id:'backend',description:'Build the API'};
+  const base={id:'one',partition:'evaluation',language:'en',tool:'route-task',input:{task:'API',candidates:[candidate]},expected:'backend'};
+  assert.throws(()=>validateDataset([base,{...base,id:'two',input:{task:'x'.repeat(1600),candidates:[candidate]}}],1024),/size limit/);
+  assert.throws(()=>validateDataset([base,{...base,id:'two',input:{task:'secret-token',candidates:[candidate]}}],1024,'secret-token'),/API secret/);
+});
 test('evaluate refuses an existing output before contacting the paid endpoint',async(t)=>{
   const {decisionCommand}=await import('../dist/decision/cli.js');
   const {mkdtemp,writeFile,readFile}=await import('node:fs/promises');
