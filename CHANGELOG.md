@@ -14,6 +14,13 @@ and releases use semantic versioning.
 - Add optional JEV CLI/MCP routing, skill selection, failure classification and scenario ranking, with off/shadow/assist modes.
 - Add bounded API contracts, optional audit and bilingual calibration/evaluation fixtures; keep live checks explicitly unverified.
 
+## 0.4.0 — prepared for release
+
+### Added
+
+- Prepare the public scoped npm package `@matiasnjacob/agents-cli` while preserving the `agents-cli` executable.
+- Publish tagged releases from GitHub Actions through npm Trusted Publishing (OIDC), alongside the existing GitHub Release tarball, checksum and provenance.
+- Document npm installation, one-time package bootstrap, publisher configuration and release recovery.
 
 ## [Unreleased]
 

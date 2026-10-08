@@ -20,10 +20,24 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 24
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+          scope: '@matiasnjacob'
+      - name: Verify npm supports Trusted Publishing
+        run: |
+          NPM_VERSION="$(npm --version)"
+          node -e 'const [major, minor, patch] = process.argv[1].split(".").map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) { console.error(`npm ${process.argv[1]} is below required 11.5.1`); process.exit(1); }' "$NPM_VERSION"
       - name: Install locked dependencies
         run: npm ci
+      - name: Verify release tag matches package version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "Release tag v$TAG_VERSION does not match package version $PACKAGE_VERSION" >&2
+            exit 1
+          fi
       - name: Typecheck
         run: npm run typecheck
       - name: Build
@@ -31,14 +45,18 @@ jobs:
       - name: Run tests
         run: npm test
       - name: Package release asset
+        id: package_release_asset
         run: |
           mkdir -p release
           PACKAGE=$(npm pack --silent --pack-destination release)
           (cd release && sha256sum "$PACKAGE" > SHA256SUMS)
+          echo "package=$PACKAGE" >> "$GITHUB_OUTPUT"
       - name: Attest release tarball
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: release/*.tgz
+      - name: Publish scoped package to npm
+        run: npm publish "release/${{ steps.package_release_asset.outputs.package }}" --access public
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -255,3 +255,13 @@ Estado: `ready_for_review`
 - Se preparó la versión `0.2.0` en package, lockfile, catálogo, README y changelog.
 - Validación: typecheck y build pasan; 43 tests pasan; `npm pack --dry-run` contiene el adaptador Pi; instalación del tarball, `init --platform pi`, `doctor` y startup `pi -a --help` pasan desde un directorio temporal.
 - No se realizó una llamada paga de modelo ni se creó tag/release. Publicar requiere revisión, commit, push del tag `v0.2.0` y CI verde.
+
+## Preparación de publicación npm v0.4.0 — 2026-10-08
+
+Estado: `pending_review`
+
+- El paquete usa el nombre público `@matiasnjacob/agents-cli` y conserva el ejecutable `agents-cli`.
+- El workflow de tags valida que el tag coincida con la versión del paquete, corre typecheck/build/tests, genera tarball y checksum, publica a npm con OIDC y luego crea el GitHub Release.
+- README y documentación explican la instalación npm, el bootstrap del nombre en npm, Trusted Publisher y recuperación si falla la creación del GitHub Release.
+- La publicación real y el tag `v0.4.0` siguen pendientes de merge, bootstrap del paquete y configuración de confianza OIDC; no se publicó ningún paquete.
+- Validación: typecheck, build, 74 tests, pack dry-run e instalación del tarball scoped pasan. El paquete instalado reporta `0.4.0`; `--help`, init Codex y `doctor` (`ok: true`) funcionan desde fuera del checkout. Los avisos MCP/identidad del proyecto mínimo son no bloqueantes.
