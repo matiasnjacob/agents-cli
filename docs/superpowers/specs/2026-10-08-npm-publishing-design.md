@@ -21,7 +21,7 @@ Update package metadata to use the scoped name, declare the canonical repository
 
 Extend `.github/workflows/release.yml`, which already runs on `v*` tags, to use Node.js 24 for publishing. The workflow will install locked dependencies, typecheck, build, run tests, verify that `package.json` version matches the tag, build/checksum/attest the tarball, publish the package to npm, then create the GitHub Release with the tarball and checksum. The workflow already has `id-token: write`; configure `actions/setup-node` for `https://registry.npmjs.org` so npm can use OIDC. Trusted publishing automatically adds npm provenance.
 
-The next release tag will be `v0.4.0`; the already-published `v0.3.0` will not be republished. Before tagging `v0.4.0`, a maintainer must configure the package's trusted publisher on npmjs.com for GitHub Actions, repository `matiasnjacob/agents-cli`, workflow `release.yml`, and direct `npm publish` permission. Create that trust configuration close to the release because npm requires its first successful publish within two days.
+The next release tag will be `v0.4.0`; the already-published `v0.3.0` will not be republished. npm requires a package to exist before configuring a Trusted Publisher, so the maintainer must first bootstrap the new scoped name through staged publishing, reject the staged `0.4.0` version (leaving npm's `0.0.0-stage` placeholder), then configure GitHub Actions for repository `matiasnjacob/agents-cli`, workflow `release.yml`, and direct `npm publish` permission. Create that trust configuration close to the release because npm requires its first successful publish within two days.
 
 README installation guidance will put `npm install --global @matiasnjacob/agents-cli` first, followed by `agents-cli setup`. Keep the checksum-verified tarball and shell installer instructions as alternatives. Keep the release badge dynamic and linked to the latest GitHub Release.
 
@@ -35,7 +35,7 @@ npm and GitHub Releases do not provide an atomic cross-registry transaction. Pub
 - Test a clean local installation from the packed tarball and run `agents-cli --version`, `agents-cli --help`, and `agents-cli doctor` in a prepared test project.
 - Add workflow checks for version/tag alignment, OIDC publishing configuration, and preserving GitHub Release assets.
 - Run typecheck, build, and the complete test suite.
-- Verify the GitHub Actions workflow can be configured as npm's trusted publisher before creating `v0.4.0`.
+- Document the one-time npm package bootstrap required before creating the Trusted Publisher and `v0.4.0`.
 
 ## Scope
 

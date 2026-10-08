@@ -1,4 +1,4 @@
-[![Latest release](https://img.shields.io/github/v/release/matiasnjacob/agents-cli?display_name=tag)](https://github.com/matiasnjacob/agents-cli/releases)
+[![Release](https://img.shields.io/github/v/release/matiasnjacob/agents-cli?display_name=tag&label=release)](https://github.com/matiasnjacob/agents-cli/releases/latest)
 [![CI](https://github.com/matiasnjacob/agents-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/matiasnjacob/agents-cli/actions/workflows/ci.yml)
 
 # agents-cli
@@ -12,8 +12,9 @@ in every project without copying private home-directory configuration. The
 catalog preserves the current seven global agents and renders them for
 Codex, OpenCode, Claude Code, or Pi.
 
-The project is currently distributed through GitHub Releases. npm
-publication is intentionally not enabled.
+The next release is prepared for installation through npm as
+`@matiasnjacob/agents-cli`. Until v0.4.0 is published, use the current GitHub
+Release installation below.
 
 ## What it installs
 
@@ -94,6 +95,19 @@ private variants from the source machine are not copied into the portable
 catalog by default.
 
 ## Installation
+
+### From npm (available with v0.4.0)
+
+After the v0.4.0 release is published, install the CLI globally and run its
+interactive setup:
+
+```sh
+npm install --global @matiasnjacob/agents-cli
+agents-cli setup
+```
+
+Node.js 20 or newer is required. The setup command lets you choose a suite,
+platform, MCPs, skills and optional JEV decision support.
 
 ### From a GitHub Release
 
@@ -245,9 +259,9 @@ attestation can be verified with GitHub's attestation tooling, for example:
 gh attestation verify agents-cli-0.3.0.tgz --repo matiasnjacob/agents-cli
 ```
 
-The project does not publish to npm at this time. Publishing an unscoped npm
-package would make it publicly downloadable; a future private distribution
-would require a scoped package and an access-controlled registry.
+The v0.4.0 release workflow will publish the scoped package to npm through
+GitHub Actions OIDC after validation. See [npm publishing](docs/npm-publishing.md)
+for the one-time registry setup and recovery steps.
 
 ## Development and validation
 

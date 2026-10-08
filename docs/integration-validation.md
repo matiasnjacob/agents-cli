@@ -14,7 +14,7 @@ It is intentionally independent of external MCP credentials.
 | Typecheck and build | Passed | `npm run typecheck`, `npm run build` |
 | Full test suite | Passed | `npm test` |
 | Package manifest | Passed | `npm pack --dry-run` |
-| Tarball execution outside checkout | Passed | `npm install <tarball>` + `npx agents-cli --help` |
+| Tarball execution outside checkout | Passed | `npm install <tarball>` + `npm list` reports `@matiasnjacob/agents-cli@0.4.0`; installed CLI `--help`, Codex init and `doctor` (`ok: true`) |
 
 The test suite uses temporary directories and the repository catalog explicitly;
 it does not read the source user's home directory or require Codex, OpenCode,
@@ -34,5 +34,7 @@ npx agents-cli --help
 ```
 
 The tarball check must be rerun for each release candidate and its output
-recorded in `docs/execution-status.md`; npm publication is intentionally out
-of scope until the package account and final name are approved.
+recorded in `docs/execution-status.md`. The scoped package identity and OIDC
+release workflow are prepared for v0.4.0. npm publication remains pending the
+maintainer's one-time package bootstrap and Trusted Publisher configuration;
+see [npm publishing](npm-publishing.md).
