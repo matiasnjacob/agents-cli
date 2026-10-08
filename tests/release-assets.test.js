@@ -47,6 +47,7 @@ test("release publishes the scoped package through OIDC after tests and before G
   assert.match(workflow, /canonical v<semver> tag/);
   assert.match(workflow, /format\('refs\/tags\/\{0\}', inputs\.release_tag\)/);
   assert.match(workflow, /\^v\(0\|\[1-9\]\[0-9\]\*\)/);
+  assert.match(workflow, /0\|\[1-9\]\[0-9\]\*\|\[0-9\]\*\[A-Za-z-\]/);
   assert.doesNotMatch(workflow, /NODE_AUTH_TOKEN|NPM_TOKEN/);
   assert.ok(workflow.indexOf("TAG_VERSION=") < workflow.indexOf("run: npm publish"));
   assert.ok(workflow.indexOf("run: npm test") < workflow.indexOf("run: npm publish"));
