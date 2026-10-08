@@ -9,6 +9,10 @@ type ParseResult =
   | { kind: "config"; config: ValidatedConfig };
 
 export type CommandResult =
+  | { kind: "setup"; config?: string; yes: boolean; dryRun: boolean }
+  | { kind: "suites-list" }
+  | { kind: "mcp-list"; platform: Platform }
+  | { kind: "decision"; command: string; input?: string; config?: string; dataset?: string; output?: string }
   | { kind: "help" }
   | { kind: "error"; message: string }
   | { kind: "validate"; config: ValidatedConfig }
@@ -22,6 +26,12 @@ export function usage(): string {
   return [
     "Usage:",
     "  agents-cli --help",
+    "  agents-cli setup [--config <file>] [--yes] [--dry-run]",
+    "  agents-cli suites list",
+    "  agents-cli mcp list --platform <codex|opencode|claude|pi>",
+    "  agents-cli decision <route-task|suggest-skills|classify-failure|rank-test-scenarios> --input <file|-> [--config <file>]",
+    "  agents-cli decision mcp [--config <file>]",
+    "  agents-cli decision evaluate --dataset <file> --output <file> [--config <file>]",
     "  agents-cli validate --platform <codex|opencode|claude|pi> --tracker <linear|trello|none>",
     "  agents-cli init --platform <codex|opencode|claude|pi> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]",
     "  agents-cli skills list --platform <codex|opencode|claude|pi>",
@@ -54,6 +64,29 @@ export function parseCliArgs(args: string[]): ParseResult {
 export function parseCommandArgs(args: string[]): CommandResult {
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) return { kind: "help" };
   const command = args[0];
+  if (command === 'setup' || command === 'mcp' || command === 'suites' || command === 'decision') {
+    const flags=command==='setup'?['--config','--yes','--dry-run']:command==='mcp'?['--platform']:command==='decision'?['--input','--config','--dataset','--output']:[];
+    const start=command==='setup'?1:2;
+    const seen=new Set<string>();
+    for (let i=start;i<args.length;i++) {
+      const flag=args[i];
+      if (!flags.includes(flag) || seen.has(flag)) return {kind:'error',message:`Unknown or duplicate option '${flag}'.`};
+      seen.add(flag);
+      if (!['--yes','--dry-run'].includes(flag)) {
+        if (!args[i+1] || args[i+1].startsWith('--')) return {kind:'error',message:`${flag} requires a value.`};
+        i++;
+      }
+    }
+    if (command==='setup') return {kind:'setup',config:option(args,'--config'),yes:args.includes('--yes'),dryRun:args.includes('--dry-run')};
+    if (command==='suites' && args[1]==='list') return {kind:'suites-list'};
+    if (command==='mcp' && args[1]==='list') {
+      const platform=validPlatform(option(args,'--platform')); return typeof platform==='string'?{kind:'mcp-list',platform}:platform;
+    }
+    if (command==='decision' && ['route-task','suggest-skills','classify-failure','rank-test-scenarios','mcp','evaluate'].includes(args[1])) {
+      return {kind:'decision',command:args[1],input:option(args,'--input'),config:option(args,'--config'),dataset:option(args,'--dataset'),output:option(args,'--output')};
+    }
+    return {kind:'error',message:'Unknown command.'};
+  }
   if (command === "validate") {
     const config = requiredConfig(args, "validate");
     if ("kind" in config) return config;

@@ -5,7 +5,7 @@ import { renderClaude } from '../adapters/claude/render.js';
 import { renderOpenCode } from '../adapters/opencode/render.js';
 import { renderPi } from '../adapters/pi/render.js';
 import { readCatalog, renderSkillFiles } from '../catalog/skills.js';
-import type { InstallFile } from '../install/engine.js';
+import {sha256, type InstallFile } from '../install/engine.js';
 import { skillIds, type SetupConfig } from './config.js';
 import {prepareMcp} from './mcp.js';
 import {resolveExternalSkill} from './external.js';
@@ -19,7 +19,9 @@ export async function prepareSetup(root:string,catalogRoot:string,config:SetupCo
     files.push(...external.files); provenance.push(external.provenance);
   }
   if (provenance.length) files.push({path:'.agents/external-skills.json',content:JSON.stringify({schemaVersion:1,skills:provenance},null,2)+'\n'});
-  files.push({path:'agents-cli.config.json',content:JSON.stringify(config,null,2)+'\n'});
+  let current:string|undefined;
+  try {current=await readFile(join(root,'agents-cli.config.json'),'utf8');} catch(e) {if ((e as NodeJS.ErrnoException).code!=='ENOENT') throw e;}
+  files.push({path:'agents-cli.config.json',content:JSON.stringify(config,null,2)+'\n',...(current!==undefined?{expectedHash:sha256(current)}:{})});
   const pending:string[]=[];
   const mcp=await prepareMcp(root,config);
   files.push(...mcp.files); pending.push(...mcp.pending);
