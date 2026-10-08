@@ -78,9 +78,9 @@ npm publication stops the job before GitHub Release creation; fix the trust or
 package issue and retry only if npm confirms that the version was not published.
 For an existing tag whose original workflow failed before npm accepted the
 package, merge the fix and manually run **Release** from `main` with the
-`release_tag` input set to the existing tag. The workflow checks out that tag,
-revalidates its package version, and publishes its attested tarball. For
-example:
+`release_tag` input set to the existing canonical `v<semver>` tag. The workflow
+checks out explicitly from `refs/tags/<tag>`, revalidates its package version,
+and publishes its attested tarball. For example:
 
 ```sh
 gh workflow run release.yml --ref main -f release_tag=v0.4.0
