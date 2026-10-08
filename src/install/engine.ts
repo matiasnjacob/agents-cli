@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, rename, writeFile, cp } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile, cp, lstat, unlink } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
 export const LOCKFILE = ".agents-cli.lock.json";
@@ -7,6 +7,8 @@ export const LOCKFILE = ".agents-cli.lock.json";
 export interface InstallFile {
   path: string;
   content: string;
+  /** Hash of the exact user configuration read and merged by a resolver. */
+  expectedHash?: string;
 }
 
 export interface InstallOptions {
@@ -43,6 +45,7 @@ export async function planInstall(options: InstallOptions): Promise<InstallPlan>
 
   for (const file of options.files) {
     assertSafePath(file.path);
+    await assertNoSymlinks(options.root, file.path);
     if (paths.has(file.path)) throw new Error(`Duplicate installation path: ${file.path}`);
     paths.add(file.path);
     const destination = join(options.root, file.path);
@@ -58,7 +61,7 @@ export async function planInstall(options: InstallOptions): Promise<InstallPlan>
       creates.push(file);
     } else if (current === file.content) {
       unchanged.push(file.path);
-    } else if (previousHash !== undefined && sha256(current) === previousHash) {
+    } else if ((file.expectedHash !== undefined && sha256(current) === file.expectedHash) || (previousHash !== undefined && sha256(current) === previousHash)) {
       updates.push(file);
       backups.push(file.path);
     } else {
@@ -90,20 +93,56 @@ export async function applyInstall(options: InstallOptions): Promise<InstallPlan
   if (options.dryRun || plan.conflicts.length > 0) return plan;
 
   const backupDir = join(options.root, ".agents-cli-backups", (options.now ?? new Date()).toISOString().replaceAll(":", "-"));
+  const changed = [...plan.updates, ...plan.creates, plan.lockfile];
+  const originals = new Map<string, string | undefined>();
+  for (const file of changed) {
+    await assertNoSymlinks(options.root, file.path);
+    try { originals.set(file.path, await readFile(join(options.root,file.path),'utf8')); }
+    catch (error) { if (!isMissingFile(error)) throw error; originals.set(file.path,undefined); }
+  }
   for (const path of plan.backups) {
     const source = join(options.root, path);
     const backup = join(backupDir, path);
     await mkdir(dirname(backup), { recursive: true });
     await cp(source, backup);
   }
-  for (const file of [...plan.creates, ...plan.updates, plan.lockfile]) {
+  const written: string[]=[];
+  let temporary: string | undefined;
+  try {
+  for (const file of changed) {
+    await assertNoSymlinks(options.root, file.path);
     const destination = join(options.root, file.path);
     await mkdir(dirname(destination), { recursive: true });
-    const temporary = `${destination}.agents-cli-tmp`;
-    await writeFile(temporary, file.content, "utf8");
+    temporary = `${destination}.agents-cli-tmp`;
+    await writeFile(temporary, file.content, {encoding:"utf8",flag:'wx'});
     await rename(temporary, destination);
+    temporary=undefined;
+    written.push(file.path);
+  }
+  } catch (error) {
+    const recovery: string[]=[];
+    if (temporary) try { await unlink(temporary); } catch { /* No file was created. */ }
+    for (const path of written.reverse()) {
+      try {
+        await assertNoSymlinks(options.root,path);
+        const original=originals.get(path);
+        if (original===undefined) await unlink(join(options.root,path));
+        else await writeFile(join(options.root,path),original,'utf8');
+      } catch { recovery.push(path); }
+    }
+    throw new Error(`Installation failed; ${recovery.length ? `recovery failed for ${recovery.join(', ')}; inspect backups.` : 'written files restored.'}`,{cause:error});
   }
   return plan;
+}
+
+export async function assertNoSymlinks(root:string,path:string): Promise<void> {
+  assertSafePath(path);
+  let current=root;
+  for (const part of path.split(/[\\/]/)) {
+    current=join(current,part);
+    try { if ((await lstat(current)).isSymbolicLink()) throw new Error(`Unsafe symlink in installation path: ${path}`); }
+    catch (error) { if (!isMissingFile(error) && (error as NodeJS.ErrnoException).code!=='ENOTDIR') throw error; }
+  }
 }
 
 export function sha256(content: string): string {

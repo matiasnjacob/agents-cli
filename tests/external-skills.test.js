@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,writeFile,symlink} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+test('external skill preserves resources, records license and rejects escaping links/binary data',async()=>{
+  const {collectExternalSkill}=await import('../dist/setup/external.js');
+  const root=await mkdtemp(join(tmpdir(),'skill-'));
+  await mkdir(join(root,'skills/example/references'),{recursive:true});
+  await writeFile(join(root,'LICENSE'),'MIT License\nPermission is hereby granted');
+  await writeFile(join(root,'skills/example/SKILL.md'),'---\nname: example\n---\nRead references/help.md');
+  await writeFile(join(root,'skills/example/references/help.md'),'resource');
+  const source={id:'example',repository:'owner/repo',revision:'a'.repeat(40),path:'skills/example'};
+  const result=await collectExternalSkill(root,source,'claude');
+  assert.equal(result.files.find(f=>f.path==='.claude/skills/example/references/help.md').content,'resource');
+  assert.equal(result.provenance.revision,'a'.repeat(40));
+  assert.match(result.provenance.license,/MIT/);
+  await symlink('/etc/passwd',join(root,'skills/example/leak'));
+  await assert.rejects(collectExternalSkill(root,source,'claude'),/symlink/);
+});
+test('external skill refuses absent license and unsupported binary resources',async()=>{
+  const {collectExternalSkill}=await import('../dist/setup/external.js');
+  const root=await mkdtemp(join(tmpdir(),'skill-'));
+  await mkdir(join(root,'skill'));
+  await writeFile(join(root,'skill/SKILL.md'),'skill');
+  const source={id:'example',repository:'owner/repo',revision:'a'.repeat(40),path:'skill'};
+  await assert.rejects(collectExternalSkill(root,source,'pi'),/license/i);
+  await writeFile(join(root,'LICENSE'),'MIT License');
+  await writeFile(join(root,'skill/file.bin'),Buffer.from([0,255,10]));
+  await assert.rejects(collectExternalSkill(root,source,'pi'),/binary/i);
+});
