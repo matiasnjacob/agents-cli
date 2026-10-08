@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,writeFile,readFile,mkdir,symlink,access} from 'node:fs/promises';
+import {mkdtemp,writeFile,readFile,mkdir,symlink,access,chmod,stat} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {parse} from 'jsonc-parser';
@@ -57,4 +57,12 @@ test('MCP configuration is repeatable for every native platform without secret e
     assert.equal(result.updates.length,0);assert.equal(result.conflicts.length,0);
     assert.equal(one.files.some(f=>f.content.includes('GITHUB_TOKEN')),true);
   }
+});
+test('replacing a private MCP configuration preserves its restrictive file mode',async()=>{
+  const {prepareMcp}=await import('../dist/setup/mcp.js');
+  const root=await mkdtemp(join(tmpdir(),'mcp-mode-')),path=join(root,'.mcp.json');
+  await writeFile(path,'{"mcpServers":{"existing":{"token":"local-secret"}}}\n',{mode:0o600});await chmod(path,0o600);
+  const prepared=await prepareMcp(root,{platform:'claude',mcps:['github']});
+  await applyInstall({root,catalogVersion:'test',files:prepared.files});
+  assert.equal((await stat(path)).mode&0o777,0o600);
 });

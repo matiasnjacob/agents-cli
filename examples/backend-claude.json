@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "platform": "claude",
+  "suite": "backend",
+  "tracker": "none",
+  "skills": [],
+  "mcps": ["github"],
+  "decisionSupport": {"mode": "off"}
+}

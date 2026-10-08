@@ -40,8 +40,8 @@ export class DecisionClient {
     const started=Date.now();
     const base:DecisionResult={status:'disabled',tool,questionVersion,mode:this.config.mode,model:this.config.model,recommendation:null,durationMs:0};
     if (this.config.mode==='off'||!this.config.tools.includes(tool)) return base;
-    const request=buildQuestions(tool,input),serialized=JSON.stringify(request.state);
-    if (Buffer.byteLength(JSON.stringify({state:request.state,questions:request.questions}))>this.config.maxInputBytes) throw new Error('Decision input exceeds size limit.');
+    const request=buildQuestions(tool,input),serialized=JSON.stringify({state:request.state,questions:request.questions});
+    if (Buffer.byteLength(serialized)>this.config.maxInputBytes) throw new Error('Decision input exceeds size limit.');
     const key=this.env[this.config.apiKeyEnv];
     if (key && serialized.includes(key)) throw new Error('Decision state contains the configured API secret.');
     let result:DecisionResult;

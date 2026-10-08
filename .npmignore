@@ -12,3 +12,7 @@ tests/
 PLAN.md
 tsconfig.json
 node_modules/
+.superpowers/
+.agents-cli-decisions/
+.agents-cli-backups/
+docs/superpowers/

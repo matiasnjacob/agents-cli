@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "0.2.0",
+  "catalogVersion": "0.3.0",
   "source": "user-global-agents",
   "agents": [
     {

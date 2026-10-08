@@ -31,11 +31,29 @@ test('decision CLI supports stdin and reports disabled mode as JSON',async()=>{
 });
 test('evaluator distinguishes calibration/evaluation and unavailable from mistakes',async()=>{
   const {evaluateDataset}=await import('../dist/decision/evaluate.js');
-  const cases=[{id:'cal',partition:'calibration',language:'es',tool:'route-task',input:{},expected:'backend',baseline:'frontend'},{id:'eval',partition:'evaluation',language:'en',tool:'route-task',input:{},expected:'backend',baseline:'backend'}];
+  const input={task:'API request',candidates:[{id:'backend',description:'Build the API'}]};
+  const cases=[{id:'cal',partition:'calibration',language:'es',tool:'route-task',input,expected:'backend',baseline:'frontend'},{id:'eval',partition:'evaluation',language:'en',tool:'route-task',input,expected:'backend',baseline:'backend'}];
   let index=0;
   const report=await evaluateDataset(cases,{evaluate:async()=>index++===0?{status:'observed',observed:'backend',confidence:0.95,durationMs:2,usage:{input_tokens:10,output_tokens:0}}:{status:'unavailable',durationMs:3}});
   assert.equal(report.partitions.calibration.correct,1);
   assert.equal(report.partitions.calibration.baselineAccuracy,0);
   assert.equal(report.partitions.evaluation.unavailable,1);
   assert.equal(report.partitions.evaluation.accuracy,null);
+});
+test('evaluate refuses an existing output before contacting the paid endpoint',async(t)=>{
+  const {decisionCommand}=await import('../dist/decision/cli.js');
+  const {mkdtemp,writeFile,readFile}=await import('node:fs/promises');
+  const {tmpdir}=await import('node:os');
+  const {createServer}=await import('node:http');
+  const {once}=await import('node:events');
+  const root=await mkdtemp(join(tmpdir(),'evaluate-out-'));
+  const dataset=join(root,'cases.json'),output=join(root,'results.json');
+  const server=createServer((req,res)=>{calls++;res.end(JSON.stringify({model:'jev-1.13.0',answers:{decision:{type:'choice',choice:'backend',confidence:0.99,probabilities:{backend:0.99,'insufficient-context':0.01}}},usage:{input_tokens:10,output_tokens:0}}));});
+  let calls=0;server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>{server.closeAllConnections();server.close();});
+  const env={...process.env,TYPESAFE_API_KEY:'test-key'};
+  const config=join(root,'decision.json');await writeFile(config,JSON.stringify({mode:'assist',endpoint:`http://127.0.0.1:${server.address().port}/v1/systemone`}));
+  await writeFile(dataset,JSON.stringify([{id:'c1',partition:'evaluation',language:'en',tool:'route-task',input:{task:'API',candidates:[{id:'backend',description:'API'}]},expected:'backend'}]));
+  await writeFile(output,'keep');
+  await assert.rejects(decisionCommand({command:'evaluate',config,dataset,output,env}),/EEXIST/);
+  assert.equal(await readFile(output,'utf8'),'keep');assert.equal(calls,0);
 });

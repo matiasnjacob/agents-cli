@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, rename, writeFile, cp, lstat, unlink } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile, cp, lstat, unlink, chmod } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
 export const LOCKFILE = ".agents-cli.lock.json";
@@ -104,11 +104,13 @@ export async function applyInstall(options: InstallOptions): Promise<InstallPlan
 
   const backupDir = join(options.root, ".agents-cli-backups", (options.now ?? new Date()).toISOString().replaceAll(":", "-"));
   const changed = [...plan.updates, ...plan.creates, ...plan.removes, plan.lockfile];
-  const originals = new Map<string, string | undefined>();
+  const originals = new Map<string, { content?: string; mode?: number }>();
   for (const file of changed) {
     await assertNoSymlinks(options.root, file.path);
-    try { originals.set(file.path, await readFile(join(options.root,file.path),'utf8')); }
-    catch (error) { if (!isMissingFile(error)) throw error; originals.set(file.path,undefined); }
+    try {
+      const path=join(options.root,file.path), info=await lstat(path);
+      originals.set(file.path,{content:await readFile(path,'utf8'),mode:info.mode & 0o777});
+    } catch (error) { if (!isMissingFile(error)) throw error; originals.set(file.path,{}); }
   }
   for (const path of plan.backups) {
     const source = join(options.root, path);
@@ -127,7 +129,9 @@ export async function applyInstall(options: InstallOptions): Promise<InstallPlan
     await mkdir(dirname(destination), { recursive: true });
     if (file.remove) {await unlink(destination);written.push(file.path);continue;}
     temporary = `${destination}.agents-cli-tmp`;
-    await writeFile(temporary, file.content, {encoding:"utf8",flag:'wx'});
+    const original=originals.get(file.path);
+    await writeFile(temporary, file.content, {encoding:"utf8",flag:'wx', ...(original?.mode===undefined?{}:{mode:original.mode})});
+    if (original?.mode!==undefined) await chmod(temporary,original.mode);
     temporaryOwned=true;
     await rename(temporary, destination);
     temporary=undefined;
@@ -141,8 +145,12 @@ export async function applyInstall(options: InstallOptions): Promise<InstallPlan
       try {
         await assertNoSymlinks(options.root,path);
         const original=originals.get(path);
-        if (original===undefined) await unlink(join(options.root,path));
-        else await writeFile(join(options.root,path),original,'utf8');
+        if (original?.content===undefined) await unlink(join(options.root,path));
+        else {
+          const target=join(options.root,path);
+          await writeFile(target,original.content,{encoding:'utf8',...(original.mode===undefined?{}:{mode:original.mode})});
+          if (original.mode!==undefined) await chmod(target,original.mode);
+        }
       } catch { recovery.push(path); }
     }
     throw new Error(`Installation failed; ${recovery.length ? `recovery failed for ${recovery.join(', ')}; inspect backups.` : 'written files restored.'}`,{cause:error});

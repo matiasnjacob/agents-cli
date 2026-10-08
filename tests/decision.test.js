@@ -50,6 +50,8 @@ test('input validation prevents duplicate candidate IDs, secrets and disabled to
   await assert.rejects(client.evaluate('route-task',{...input,candidates:[input.candidates[0],input.candidates[0]]}),/unique/);
   await assert.rejects(client.evaluate('classify-failure',{command:'test',output:'oops',apiKey:'secret'}),/Unknown|secret/);
   assert.equal((await new DecisionClient(decisionConfig({mode:'assist',tools:[]}),{}).evaluate('route-task',input)).status,'disabled');
+  const secretClient=new DecisionClient(decisionConfig({mode:'assist',endpoint:'http://127.0.0.1:1/v1/systemone'}),{TYPESAFE_API_KEY:'sensitive-key'});
+  await assert.rejects(secretClient.evaluate('route-task',{...input,candidates:[{id:'backend',description:'sensitive-key'}]}),/secret/);
 });
 test('ranks scenarios using real Score probabilities and stable deterministic sorting',async(t)=>{
   const {DecisionClient}=await import('../dist/decision/client.js');
