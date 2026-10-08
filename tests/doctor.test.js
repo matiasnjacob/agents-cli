@@ -35,3 +35,11 @@ test("doctor exposes missing installation, malformed lockfile and unavailable ac
   assert.equal(report.checks.find(({ name }) => name === "platform").status, "fail");
   assert.equal(report.checks.find(({ name }) => name === "mcp").status, "warn");
 });
+test('doctor distinguishes configured JEV from credentials and live calls without printing values',async()=>{
+  const root=await project();
+  await writeFile(join(root,'agents-cli.config.json'),JSON.stringify({schemaVersion:1,platform:'pi',suite:'backend',tracker:'none',mcps:[],decisionSupport:{mode:'shadow',apiKeyEnv:'TYPESAFE_API_KEY'}}));
+  const report=await runDoctor({root,catalogRoot:join(import.meta.dirname,'../catalog'),env:{TYPESAFE_API_KEY:'super-secret'}});
+  assert.equal(report.checks.find(c=>c.name==='jev-credentials').status,'pass');
+  assert.equal(report.checks.find(c=>c.name==='jev-runtime').status,'warn');
+  assert.equal(JSON.stringify(report).includes('super-secret'),false);
+});

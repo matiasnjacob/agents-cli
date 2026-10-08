@@ -5,6 +5,8 @@ import type { InstallFile } from "../../install/engine.js";
 export interface ClaudeRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
+  selectedAgents?: string[];
+  selectedMcpServers?: string[];
 }
 
 interface AgentSource {
@@ -28,12 +30,12 @@ const toolNames: Record<string, string> = {
 
 export async function renderClaude(options: ClaudeRenderOptions): Promise<InstallFile[]> {
   const agentRoot = join(options.catalogRoot, "agents");
-  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md")).sort();
+  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md") && (!options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")))).sort();
   const skills = options.selectedSkills ?? [];
   const agents = await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8"))));
   const files = agents.map((agent) => ({
     path: `.claude/agents/${agent.id}.md`,
-    content: renderAgent(agent, skills),
+    content: renderAgent(agent, skills, options.selectedMcpServers ?? []),
   }));
   files.push({
     path: "CLAUDE.md",
@@ -61,7 +63,7 @@ async function parseAgent(path: string, source: string): Promise<AgentSource> {
   };
 }
 
-function renderAgent(agent: AgentSource, skills: string[]): string {
+function renderAgent(agent: AgentSource, skills: string[], mcpServers: string[]): string {
   const tools = Object.entries(agent.permission)
     .filter(([name, value]) => name in toolNames && value !== "deny")
     .map(([name]) => toolNames[name])
@@ -82,10 +84,11 @@ function renderAgent(agent: AgentSource, skills: string[]): string {
     `name: ${agent.id}`,
     `description: ${JSON.stringify(agent.description)}`,
     ...(tools ? [`tools: ${tools}`] : []),
+    ...(mcpServers.length ? [`mcpServers: ${JSON.stringify(mcpServers)}`] : []),
     `permissionMode: ${editDenied ? "plan" : "default"}`,
     "---",
     "",
-    `${agent.body}\n\n${notes}`,
+    `${agent.body.replaceAll('Skills live in `~/.agents/skills`;','For this Claude project, selected skills live in `.claude/skills`;')}\n\n${notes}`,
   ];
   if (taskDenied) lines.push("\nTask delegation is not enabled for this role in the source policy.");
   return `${lines.join("\n")}\n`;

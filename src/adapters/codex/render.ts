@@ -5,6 +5,7 @@ import type { InstallFile } from "../../install/engine.js";
 export interface CodexRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
+  selectedAgents?: string[];
 }
 
 interface AgentSource {
@@ -16,7 +17,7 @@ interface AgentSource {
 
 export async function renderCodex(options: CodexRenderOptions): Promise<InstallFile[]> {
   const agentRoot = join(options.catalogRoot, "agents");
-  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md")).sort();
+  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md") && (!options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")))).sort();
   const skills = options.selectedSkills ?? [];
   const agents = await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8"))));
   const files = agents.map((agent) => ({
@@ -54,7 +55,7 @@ function renderAgent(agent: AgentSource, skills: string[]): string {
   const edit = permission.edit as string | Record<string, unknown> | undefined;
   const task = permission.task as string | Record<string, unknown> | undefined;
   const instructions = [
-    agent.body,
+    agent.body.replace("Skills live in `~/.agents/skills`;", "Selected skills live in `.codex/skills`;"),
     "",
     "## Codex adapter contract",
     "",

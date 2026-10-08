@@ -1,0 +1,7 @@
+{
+  "task": "Implement a users API endpoint with persistence",
+  "candidates": [
+    {"id": "global-backend-developer", "description": "Backend APIs and persistence"},
+    {"id": "global-frontend-developer", "description": "UI and client integration"}
+  ]
+}

@@ -23,6 +23,13 @@ test("renders selected skill references and supported Claude tool metadata", asy
   assert.match(orchestrator.content, /\.claude\/skills\/orchestrator-governance\/SKILL\.md/);
   assert.match(orchestrator.content, /permissionMode: plan/);
 });
+test('selected MCP tools are available to Claude roles without broadening permission scope',async()=>{
+  const files=await renderClaude({catalogRoot,selectedAgents:['global-orchestrator'],selectedSkills:[],selectedMcpServers:['agents-cli-jev','agents-cli-github']});
+  const prompt=files.find(f=>f.path.endsWith('global-orchestrator.md')).content;
+  assert.match(prompt,/mcpServers: \["agents-cli-jev","agents-cli-github"\]/);
+  assert.doesNotMatch(prompt,/agents-cli-linear/);
+  assert.doesNotMatch(prompt,/Skills live in `~\/\.agents\/skills`/);
+});
 
 test("maps read-only roles to plan mode and denies task delegation when requested", async () => {
   const files = await renderClaude({ catalogRoot });

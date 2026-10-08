@@ -89,9 +89,7 @@ the current catalog are:
 - `orchestrator-governance`
 - `worktree-task-isolation`
 
-The catalog also exposes `skills.sh` as an external source. External skills
-are not downloaded automatically: their platform-specific installer and
-license must be resolved explicitly before installation. Project-scoped or
+The catalog also exposes `skills.sh` as an external source. External skills are downloaded only when selected in setup with an explicit GitHub repository, full commit SHA and skill path. The installer preserves text resources, records a license file and provenance, and never executes skill scripts. Project-scoped or
 private variants from the source machine are not copied into the portable
 catalog by default.
 
@@ -103,10 +101,10 @@ Download the `.tgz` asset from the [Releases](https://github.com/matiasnjacob/ag
 page, verify its checksum, and install it locally:
 
 ```sh
-curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.2.0/agents-cli-0.2.0.tgz
-curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.2.0/SHA256SUMS
-grep agents-cli-0.2.0.tgz SHA256SUMS | sha256sum --check
-npm install --global ./agents-cli-0.2.0.tgz
+curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.3.0/agents-cli-0.3.0.tgz
+curl -LO https://github.com/matiasnjacob/agents-cli/releases/download/v0.3.0/SHA256SUMS
+grep agents-cli-0.3.0.tgz SHA256SUMS | sha256sum --check
+npm install --global ./agents-cli-0.3.0.tgz
 ```
 
 For a one-command installation of the latest stable release on macOS or
@@ -118,7 +116,7 @@ less install.sh
 bash install.sh
 ```
 
-Set `AGENTS_CLI_VERSION=0.2.0` to install a specific release, or
+Set `AGENTS_CLI_VERSION=0.3.0` to install a specific release, or
 `AGENTS_CLI_REPOSITORY=owner/repository` when using a compatible fork. The
 installer resolves stable releases through the GitHub API, downloads the
 tarball and `SHA256SUMS`, verifies the checksum, then runs `npm install --global`.
@@ -141,6 +139,9 @@ npm run build
 ```
 
 ## Quick start
+
+Run `agents-cli setup` for interactive platform, suite, MCP, skill and optional JEV selection. It writes a reproducible `agents-cli.config.json`. For automation, use `agents-cli setup --config <file> --yes`, or preview with `--dry-run`. See [interactive setup](docs/setup.md) and [JEV decision support](docs/jev.md).
+
 
 Select the platform and tracker explicitly. `none` means no tracker is
 created or required.
@@ -167,6 +168,12 @@ are reported as conflicts and are never silently discarded.
 
 ```text
 agents-cli --help
+agents-cli setup [--config <file>] [--yes] [--dry-run]
+agents-cli suites list
+agents-cli mcp list --platform <codex|opencode|claude|pi>
+agents-cli decision <tool> --input <file|-> [--config <file>]
+agents-cli decision mcp [--config <file>]
+agents-cli decision evaluate --dataset <file> --output <file> [--config <file>]
 agents-cli init --platform <codex|opencode|claude|pi> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]
 agents-cli skills list --platform <codex|opencode|claude|pi>
 agents-cli skills add <id> --platform <codex|opencode|claude|pi> [--dry-run]
@@ -224,8 +231,8 @@ release assets.
 Releases are created from version tags:
 
 ```sh
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 The tag workflow runs `npm ci`, typecheck, build and the complete test suite.
@@ -235,7 +242,7 @@ Review the generated assets and attestation before sharing a release. The
 attestation can be verified with GitHub's attestation tooling, for example:
 
 ```sh
-gh attestation verify agents-cli-0.2.0.tgz --repo matiasnjacob/agents-cli
+gh attestation verify agents-cli-0.3.0.tgz --repo matiasnjacob/agents-cli
 ```
 
 The project does not publish to npm at this time. Publishing an unscoped npm

@@ -1,6 +1,6 @@
 {
   "name": "agents-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Initialize projects with portable agent definitions and skills.",
   "type": "module",
   "bin": {
@@ -17,5 +17,9 @@
   "devDependencies": {
     "@types/node": "22.10.2",
     "typescript": "5.7.2"
+  },
+  "dependencies": {
+    "jsonc-parser": "3.3.1",
+    "smol-toml": "1.9.0"
   }
 }
