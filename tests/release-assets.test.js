@@ -33,3 +33,14 @@ test("release workflow requests provenance permissions and attests the tarball",
   assert.match(workflow, /cd release && sha256sum [^\n]+ > SHA256SUMS/);
   assert.doesNotMatch(workflow, /sha256sum ["']?release\//);
 });
+
+test("release publishes the scoped package through OIDC after tests and before GitHub assets", async () => {
+  const workflow = await readFile(join(root, ".github/workflows/release.yml"), "utf8");
+  assert.match(workflow, /node-version:\s*24/);
+  assert.match(workflow, /registry-url:\s*https:\/\/registry\.npmjs\.org/);
+  assert.match(workflow, /TAG_VERSION=.*GITHUB_REF_NAME/);
+  assert.match(workflow, /npm publish --access public/);
+  assert.doesNotMatch(workflow, /NODE_AUTH_TOKEN|NPM_TOKEN/);
+  assert.ok(workflow.indexOf("run: npm test") < workflow.indexOf("run: npm publish"));
+  assert.ok(workflow.indexOf("run: npm publish") < workflow.indexOf("gh release create"));
+});
