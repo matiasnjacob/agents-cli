@@ -38,14 +38,17 @@ test("release publishes the scoped package through OIDC after tests and before G
   const workflow = await readFile(join(root, ".github/workflows/release.yml"), "utf8");
   assert.match(workflow, /node-version:\s*24/);
   assert.match(workflow, /registry-url:\s*https:\/\/registry\.npmjs\.org/);
-  assert.match(workflow, /TAG_VERSION=.*GITHUB_REF_NAME/);
-  assert.match(workflow, /npm publish ["']?release\/.*outputs\.package.*--access public/);
+  assert.match(workflow, /TAG_VERSION="\$\{RELEASE_TAG#v\}"/);
+  assert.match(workflow, /npm publish ["']?\.\/release\/.*outputs\.package.*--access public/);
   assert.match(workflow, /below required 11\.5\.1/);
   assert.match(workflow, /id:\s*package_release_asset/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /release_tag:/);
   assert.doesNotMatch(workflow, /NODE_AUTH_TOKEN|NPM_TOKEN/);
   assert.ok(workflow.indexOf("TAG_VERSION=") < workflow.indexOf("run: npm publish"));
   assert.ok(workflow.indexOf("run: npm test") < workflow.indexOf("run: npm publish"));
   assert.ok(workflow.indexOf("run: npm publish") < workflow.indexOf("gh release create"));
+  assert.match(workflow, /gh release create "\$RELEASE_TAG"/);
 });
 
 test("README leads with scoped npm installation and documents the registry bootstrap", async () => {

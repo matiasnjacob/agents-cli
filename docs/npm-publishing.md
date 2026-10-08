@@ -75,8 +75,16 @@ do not rerun npm publication for that version. Retry only the GitHub Release
 creation with the already-generated assets from the successful workflow run,
 or use the workflow's assets to create the GitHub Release manually. A failed
 npm publication stops the job before GitHub Release creation; fix the trust or
-package issue and rerun the workflow for the same tag only if npm confirms that
-the version was not published.
+package issue and retry only if npm confirms that the version was not published.
+For an existing tag whose original workflow failed before npm accepted the
+package, merge the fix and manually run **Release** from `main` with the
+`release_tag` input set to the existing tag. The workflow checks out that tag,
+revalidates its package version, and publishes its attested tarball. For
+example:
+
+```sh
+gh workflow run release.yml --ref main -f release_tag=v0.4.0
+```
 
 ## Current status
 
