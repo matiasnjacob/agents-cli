@@ -18,7 +18,12 @@ test("installer resolves releases through the GitHub API and verifies checksums"
 test("npm package uses the scoped identity and preserves the CLI executable", async () => {
   const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
   assert.equal(manifest.name, "@matiasnjacob/agents-cli");
-  assert.equal(manifest.version, "0.4.0");
+  assert.equal(manifest.version, "0.4.1");
+  const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
+  assert.equal(lock.version, manifest.version);
+  assert.equal(lock.packages[""].version, manifest.version);
+  const changelog = await readFile(join(root, "CHANGELOG.md"), "utf8");
+  assert.match(changelog, /^## 0\.4\.1/m);
   assert.equal(manifest.bin["agents-cli"], "dist/cli/index.js");
   assert.equal(manifest.publishConfig.access, "public");
   assert.equal(manifest.repository.url, "git+https://github.com/matiasnjacob/agents-cli.git");
@@ -53,6 +58,18 @@ test("release publishes the scoped package through OIDC after tests and before G
   assert.ok(workflow.indexOf("run: npm test") < workflow.indexOf("run: npm publish"));
   assert.ok(workflow.indexOf("run: npm publish") < workflow.indexOf("gh release create"));
   assert.match(workflow, /gh release create "\$RELEASE_TAG"/);
+});
+
+test("release smoke-tests the packed CLI before publishing", async () => {
+  const workflow = await readFile(join(root, ".github/workflows/release.yml"), "utf8");
+  const smoke = await readFile(join(root, "scripts/smoke-package.mjs"), "utf8");
+  assert.match(workflow, /name: Smoke test packaged CLI/);
+  assert.match(workflow, /node scripts\/smoke-package\.mjs "\.\/release\/\$\{\{ steps\.package_release_asset\.outputs\.package \}\}"/);
+  assert.ok(workflow.indexOf("name: Smoke test packaged CLI") < workflow.indexOf("name: Attest release tarball"));
+  assert.match(smoke, /node_modules["'],\s*["']\.bin["'],\s*["']agents-cli/);
+  assert.match(smoke, /--version/);
+  assert.match(smoke, /--dry-run/);
+  assert.match(smoke, /npm",\s*\["install"/);
 });
 
 test("README leads with scoped npm installation and documents the registry bootstrap", async () => {

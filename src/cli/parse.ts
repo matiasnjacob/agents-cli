@@ -9,6 +9,7 @@ type ParseResult =
   | { kind: "config"; config: ValidatedConfig };
 
 export type CommandResult =
+  | { kind: "version" }
   | { kind: "setup"; config?: string; yes: boolean; dryRun: boolean }
   | { kind: "suites-list" }
   | { kind: "mcp-list"; platform: Platform }
@@ -26,6 +27,7 @@ export function usage(): string {
   return [
     "Usage:",
     "  agents-cli --help",
+    "  agents-cli --version",
     "  agents-cli setup [--config <file>] [--yes] [--dry-run]",
     "  agents-cli suites list",
     "  agents-cli mcp list --platform <codex|opencode|claude|pi>",
@@ -40,6 +42,7 @@ export function usage(): string {
     "  agents-cli update --dry-run",
     "",
     "Commands:",
+    "  setup     Interactively configure the suite, MCPs, and skills.",
     "  validate  Validate a complete platform and tracker selection.",
     "  init      Install agents and selected skills into the current project.",
     "  skills    List or install selected skills.",
@@ -47,6 +50,7 @@ export function usage(): string {
     "  update    Preview safe catalog updates and local conflicts.",
     "",
     "Options:",
+    "  --version           Show the installed version.",
     "  --platform <value>  Target agent runtime.",
     "  --tracker <value>   Project tracker integration.",
     "  --help              Show this help.",
@@ -62,6 +66,7 @@ export function parseCliArgs(args: string[]): ParseResult {
 }
 
 export function parseCommandArgs(args: string[]): CommandResult {
+  if (args.length === 1 && (args[0] === "--version" || args[0] === "-v")) return { kind: "version" };
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) return { kind: "help" };
   const command = args[0];
   if (command === 'setup' || command === 'mcp' || command === 'suites' || command === 'decision') {

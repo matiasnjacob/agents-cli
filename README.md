@@ -12,9 +12,9 @@ in every project without copying private home-directory configuration. The
 catalog preserves the current seven global agents and renders them for
 Codex, OpenCode, Claude Code, or Pi.
 
-The next release is prepared for installation through npm as
-`@matiasnjacob/agents-cli`. Until v0.4.0 is published, use the current GitHub
-Release installation below.
+Install the published CLI from npm as `@matiasnjacob/agents-cli`. Check the
+installed version with `agents-cli --version`, then run `agents-cli setup` to
+configure a project.
 
 ## What it installs
 
@@ -96,18 +96,23 @@ catalog by default.
 
 ## Installation
 
-### From npm (available with v0.4.0)
+### From npm
 
-After the v0.4.0 release is published, install the CLI globally and run its
-interactive setup:
+Install the CLI globally and verify that your shell resolves the expected
+version before starting the interactive setup:
 
 ```sh
 npm install --global @matiasnjacob/agents-cli
+agents-cli --version
 agents-cli setup
 ```
 
 Node.js 20 or newer is required. The setup command lets you choose a suite,
 platform, MCPs, skills and optional JEV decision support.
+
+If `--version` or `setup` is reported as unknown, check `command -v agents-cli`
+and `npm list --global @matiasnjacob/agents-cli`. Your shell may be resolving a
+different or older `agents-cli` executable than the scoped npm package.
 
 ### From a GitHub Release
 
@@ -182,6 +187,7 @@ are reported as conflicts and are never silently discarded.
 
 ```text
 agents-cli --help
+agents-cli --version
 agents-cli setup [--config <file>] [--yes] [--dry-run]
 agents-cli suites list
 agents-cli mcp list --platform <codex|opencode|claude|pi>
@@ -259,9 +265,8 @@ attestation can be verified with GitHub's attestation tooling, for example:
 gh attestation verify agents-cli-0.3.0.tgz --repo matiasnjacob/agents-cli
 ```
 
-The v0.4.0 release workflow will publish the scoped package to npm through
-GitHub Actions OIDC after validation. See [npm publishing](docs/npm-publishing.md)
-for the one-time registry setup and recovery steps.
+The scoped npm package is published through GitHub Actions OIDC. See
+[npm publishing](docs/npm-publishing.md) for the registry setup and recovery steps.
 
 ## Development and validation
 

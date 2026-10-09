@@ -1,6 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseCommandArgs } from "../dist/cli/parse.js";
+import { parseCommandArgs, usage } from "../dist/cli/parse.js";
+
+test("parses long and short version flags", () => {
+  assert.deepEqual(parseCommandArgs(["--version"]), { kind: "version" });
+  assert.deepEqual(parseCommandArgs(["-v"]), { kind: "version" });
+});
+
+test("help lists setup as an interactive configuration command", () => {
+  const help = parseCommandArgs(["--help"]);
+  assert.equal(help.kind, "help");
+  assert.match(usage(), /agents-cli --version/);
+  assert.match(usage(), /setup\s+Interactively configure the suite, MCPs, and skills/);
+});
 
 test("requires explicit platform and tracker for init", () => {
   assert.match(parseCommandArgs(["init", "--platform", "codex"]).message, /requires both/);

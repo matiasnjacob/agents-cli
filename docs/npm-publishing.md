@@ -1,10 +1,11 @@
 # npm publishing
 
-The next planned version is `0.4.0` of the public package
-[`@matiasnjacob/agents-cli`](https://www.npmjs.com/package/@matiasnjacob/agents-cli).
-It installs the `agents-cli` executable and is published by the existing tag
-release workflow, `.github/workflows/release.yml`. GitHub Releases continue to
-provide the `.tgz`, `SHA256SUMS` and GitHub build-provenance attestation.
+Version `0.4.0` of the public package
+[`@matiasnjacob/agents-cli`](https://www.npmjs.com/package/@matiasnjacob/agents-cli)
+is published. The next planned release is `0.4.1`, which adds CLI version
+reporting and improves setup command discoverability. Releases install the
+`agents-cli` executable and are published by `.github/workflows/release.yml`.
+GitHub Releases provide the `.tgz`, `SHA256SUMS` and build-provenance attestation.
 
 ## One-time setup for the new package name
 
@@ -88,10 +89,10 @@ gh workflow run release.yml --ref main -f release_tag=v0.4.0
 
 ## Current status
 
-The workflow and package metadata are prepared for v0.4.0. The npm package
-bootstrap, Trusted Publisher configuration, tag and publication are maintainer
-actions that remain pending. See the [integration validation record](integration-validation.md)
-for current test evidence.
+The npm Trusted Publisher, v0.4.0 package and `v0.4.0` GitHub Release are
+published. This branch prepares v0.4.1; create and push its tag only after the
+change is merged. See the [integration validation record](integration-validation.md)
+for test evidence.
 
 References: [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/),
 [npm staged publishing](https://docs.npmjs.com/staged-publishing/), and

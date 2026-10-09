@@ -1,8 +1,18 @@
 # Interactive setup
 
-Install agents-cli from a GitHub Release first, then run `agents-cli setup` in the
-repository to configure. Node.js >=20 is required. The wizard does not install an
-agent runtime, global packages or authentication credentials.
+Install agents-cli from npm, verify the installed version, then run
+`agents-cli setup` in the repository to configure it:
+
+```sh
+npm install --global @matiasnjacob/agents-cli
+agents-cli --version
+agents-cli setup
+```
+
+Node.js >=20 is required. The wizard does not install an agent runtime, global
+packages or authentication credentials. If the CLI reports `setup` or
+`--version` as unknown, run `command -v agents-cli` and
+`npm list --global @matiasnjacob/agents-cli` to check which executable is active.
 
 The wizard selects platform, suite, agents, tracker, MCPs, skills and optional JEV.
 Enter selects the displayed default; numeric/name choices and comma-separated
