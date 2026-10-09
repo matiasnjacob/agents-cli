@@ -126,7 +126,7 @@ Run: `npm run typecheck && npm test && npm pack --dry-run && git diff --check`
 
 Expected: all checks pass and package metadata, changelog, CLI output, and packed tarball report the same release version.
 
-- [ ] **Step 3: Submit a PR**
+- [x] **Step 3: Submit a PR**
 
 Create a PR with the implementation and smoke-test evidence. Do not move the release tag or publish before the PR is merged.
 
