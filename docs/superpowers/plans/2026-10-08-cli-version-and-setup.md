@@ -133,3 +133,30 @@ Create a PR with the implementation and smoke-test evidence. Do not move the rel
 - [ ] **Step 4: Release after merge**
 
 After the PR is merged, create and push tag `v0.4.1`, run the release workflow, and verify `npm view @matiasnjacob/agents-cli version` and the GitHub release assets.
+
+### Final review fix: Make packed-package smoke verification repeatable
+
+**Files:**
+- Create: `scripts/smoke-package.mjs`
+- Modify: `.github/workflows/release.yml`
+- Test: `tests/release-assets.test.js`
+
+- [x] **Step 1: Add a failing release-contract test**
+
+Assert that the release workflow invokes the packaged CLI smoke script after packing and before attestation/publication, and that the script installs a tarball and invokes its local `.bin/agents-cli` for version and setup dry-run checks.
+
+- [x] **Step 2: Verify the test fails before implementation**
+
+Run: `node --test tests/release-assets.test.js`
+
+Expected: fail because `scripts/smoke-package.mjs` is missing.
+
+- [x] **Step 3: Add the isolated tarball smoke script and release step**
+
+Install the supplied tarball into a temporary prefix, compare `--version` and `-v` with that installed package's `package.json`, check help includes setup, and run setup dry-run from an empty temporary project. Invoke the script from the release workflow before attestation and npm publication.
+
+- [x] **Step 4: Run the contract test and the tarball smoke test**
+
+Run: `npm run build && node --test tests/release-assets.test.js tests/cli-smoke.test.js`, then run `npm pack` and `node scripts/smoke-package.mjs <tarball>`.
+
+Expected: focused tests pass and the freshly installed tarball reports its version, lists setup, and leaves the dry-run project empty.

@@ -60,6 +60,18 @@ test("release publishes the scoped package through OIDC after tests and before G
   assert.match(workflow, /gh release create "\$RELEASE_TAG"/);
 });
 
+test("release smoke-tests the packed CLI before publishing", async () => {
+  const workflow = await readFile(join(root, ".github/workflows/release.yml"), "utf8");
+  const smoke = await readFile(join(root, "scripts/smoke-package.mjs"), "utf8");
+  assert.match(workflow, /name: Smoke test packaged CLI/);
+  assert.match(workflow, /node scripts\/smoke-package\.mjs "\.\/release\/\$\{\{ steps\.package_release_asset\.outputs\.package \}\}"/);
+  assert.ok(workflow.indexOf("name: Smoke test packaged CLI") < workflow.indexOf("name: Attest release tarball"));
+  assert.match(smoke, /node_modules["'],\s*["']\.bin["'],\s*["']agents-cli/);
+  assert.match(smoke, /--version/);
+  assert.match(smoke, /--dry-run/);
+  assert.match(smoke, /npm",\s*\["install"/);
+});
+
 test("README leads with scoped npm installation and documents the registry bootstrap", async () => {
   const readme = await readFile(join(root, "README.md"), "utf8");
   assert.match(readme, /npm install --global @matiasnjacob\/agents-cli/);
