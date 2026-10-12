@@ -27,6 +27,10 @@ async function smokePackage(tarball) {
     const setup = JSON.parse(invoke(["setup", "--config", config, "--dry-run"]));
     assert.equal(setup.dryRun, true);
     assert.deepEqual(await readdir(project), [], "setup --dry-run must not write project files");
+    const applied = JSON.parse(invoke(["setup", "--config", config, "--yes"]));
+    assert.equal(applied.dryRun, false);
+    const doctor = JSON.parse(invoke(["doctor"]));
+    assert.equal(doctor.ok, true, "doctor must pass after the packaged CLI applies its setup config");
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
   }

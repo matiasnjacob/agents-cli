@@ -18,12 +18,12 @@ test("installer resolves releases through the GitHub API and verifies checksums"
 test("npm package uses the scoped identity and preserves the CLI executable", async () => {
   const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
   assert.equal(manifest.name, "@matiasnjacob/agents-cli");
-  assert.equal(manifest.version, "0.4.1");
+  assert.equal(manifest.version, "0.4.2");
   const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
   assert.equal(lock.version, manifest.version);
   assert.equal(lock.packages[""].version, manifest.version);
   const changelog = await readFile(join(root, "CHANGELOG.md"), "utf8");
-  assert.match(changelog, /^## 0\.4\.1/m);
+  assert.match(changelog, /^## 0\.4\.2/m);
   assert.equal(manifest.bin["agents-cli"], "dist/cli/index.js");
   assert.equal(manifest.publishConfig.access, "public");
   assert.equal(manifest.repository.url, "git+https://github.com/matiasnjacob/agents-cli.git");
@@ -69,6 +69,8 @@ test("release smoke-tests the packed CLI before publishing", async () => {
   assert.match(smoke, /node_modules["'],\s*["']\.bin["'],\s*["']agents-cli/);
   assert.match(smoke, /--version/);
   assert.match(smoke, /--dry-run/);
+  assert.match(smoke, /doctor/);
+  assert.match(smoke, /doctor\.ok/);
   assert.match(smoke, /npm",\s*\["install"/);
 });
 
