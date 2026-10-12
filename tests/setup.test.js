@@ -11,17 +11,36 @@ const catalogRoot = join(import.meta.dirname, '../catalog');
 const manifest = JSON.parse(await readFile(join(catalogRoot, 'manifest.json'), 'utf8'));
 const input = {schemaVersion:1, platform:'codex', suite:'backend', tracker:'none', skills:[], mcps:[], decisionSupport:{mode:'off'}};
 
+test('setup config normalizes known legacy ids and validates an optional project prefix', async () => {
+  const {resolveConfig} = await import('../dist/setup/config.js');
+  const legacyManifest = structuredClone(manifest);
+  legacyManifest.agents = legacyManifest.agents.map(agent => ({...agent, id:agent.id.replace(/^global-/, '')}));
+  const canonical = resolveConfig({...input, agents:['global-backend-developer']}, legacyManifest);
+  assert.deepEqual(canonical.agents, ['backend-developer']);
+  assert.equal(canonical.agentPrefix, '');
+  assert.equal(resolveConfig({...input, agents:['backend-developer'], agentPrefix:'acme-team'}, legacyManifest).agentPrefix, 'acme-team');
+  for (const agentPrefix of ['../escape', 'a/b', 'two words', 'Bad']) {
+    assert.throws(() => resolveConfig({...input, agentPrefix}, legacyManifest), /prefix/i);
+  }
+  assert.throws(() => resolveConfig({...input, agents:['global-unknown-agent']}, legacyManifest), /agent/i);
+});
+
+test('catalog agent identifiers and source paths use canonical unprefixed names', () => {
+  assert.ok(manifest.agents.every(agent => !agent.id.startsWith('global-')));
+  assert.ok(manifest.agents.every(agent => !agent.path.split('/').at(-1).startsWith('global-')));
+});
+
 test('backend selection renders only its requested roles on each platform', async () => {
   for (const render of [renderCodex, renderClaude, renderOpenCode, renderPi]) {
-    const files = await render({catalogRoot, selectedAgents:['global-backend-developer'], selectedSkills:[]});
-    assert.equal(files.some(f => /global-frontend-developer\.(md|toml)$/.test(f.path)), false);
-    assert.equal(files.some(f => /global-backend-developer\.(md|toml)$/.test(f.path)), true);
+    const files = await render({catalogRoot, selectedAgents:['backend-developer'], selectedSkills:[]});
+    assert.equal(files.some(f => /frontend-developer\.(md|toml)$/.test(f.path)), false);
+    assert.equal(files.some(f => /backend-developer\.(md|toml)$/.test(f.path)), true);
   }
 });
 test('preset resolution includes role skill dependencies and rejects invalid configuration', async () => {
   const {resolveConfig} = await import('../dist/setup/config.js');
   const resolved = resolveConfig(input, manifest);
-  assert.equal(resolved.agents.includes('global-frontend-developer'), false);
+  assert.equal(resolved.agents.includes('frontend-developer'), false);
   assert.equal(resolved.skills.includes('developer-task-execution'), true);
   assert.throws(() => resolveConfig({...input, platform:'unknown'}, manifest), /platform/);
   assert.throws(() => resolveConfig({...input, unexpected:'value'}, manifest), /Unknown/);
@@ -40,7 +59,7 @@ test('prepared setup writes configuration and only selected roles and is idempot
   assert.equal(plan.creates.length,0);
   assert.equal(plan.updates.length,0);
   assert.equal(plan.conflicts.length,0);
-  assert.equal((await readdir(join(root,'.codex/agents'))).includes('global-aws-specialist.toml'),false);
+  assert.equal((await readdir(join(root,'.codex/agents'))).includes('aws-specialist.toml'),false);
   assert.equal(JSON.parse(await readFile(join(root,'agents-cli.config.json'),'utf8')).suite,'backend');
 });
 test('changing suite removes only unchanged managed roles and preserves edited roles as conflicts',async()=>{
@@ -52,5 +71,5 @@ test('changing suite removes only unchanged managed roles and preserves edited r
   await applyInstall({root,catalogVersion:'test',files:first.files});
   const second=await prepareSetup(root,catalogRoot,resolveConfig({...input,suite:'review-qa'},manifest));
   await applyInstall({root,catalogVersion:'test',files:second.files});
-  assert.equal((await readdir(join(root,'.codex/agents'))).includes('global-backend-developer.toml'),false);
+  assert.equal((await readdir(join(root,'.codex/agents'))).includes('backend-developer.toml'),false);
 });

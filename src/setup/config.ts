@@ -1,10 +1,10 @@
 import { supportedPlatforms, supportedTrackers, type Platform, type Tracker } from '../contract.js';
 
 export const suites = {
-  complete: ['global-orchestrator','global-backend-developer','global-frontend-developer','global-aws-specialist','global-code-reviewer','global-qa-automator','global-qa-manual'],
-  backend: ['global-orchestrator','global-backend-developer','global-code-reviewer','global-qa-automator','global-qa-manual'],
-  frontend: ['global-orchestrator','global-frontend-developer','global-code-reviewer','global-qa-automator','global-qa-manual'],
-  'review-qa': ['global-code-reviewer','global-qa-automator','global-qa-manual'],
+  complete: ['orchestrator','backend-developer','frontend-developer','aws-specialist','code-reviewer','qa-automator','qa-manual'],
+  backend: ['orchestrator','backend-developer','code-reviewer','qa-automator','qa-manual'],
+  frontend: ['orchestrator','frontend-developer','code-reviewer','qa-automator','qa-manual'],
+  'review-qa': ['code-reviewer','qa-automator','qa-manual'],
   custom: [],
 };
 export type DecisionTool = 'route-task' | 'suggest-skills' | 'classify-failure' | 'rank-test-scenarios';
@@ -17,7 +17,7 @@ export interface DecisionConfig {
 export interface ExternalSkill { id: string; repository: string; revision: string; path: string; }
 export type SkillSelection = string | ExternalSkill;
 export interface SetupConfig {
-  schemaVersion: 1; platform: Platform; suite: keyof typeof suites; agents: string[];
+  schemaVersion: 1; platform: Platform; suite: keyof typeof suites; agents: string[]; agentPrefix: string;
   tracker: Tracker; skills: SkillSelection[]; mcps: string[]; decisionSupport: DecisionConfig;
 }
 export interface Manifest {
@@ -71,14 +71,17 @@ export function decisionConfig(value: unknown = {}): DecisionConfig {
 export function skillIds(config: SetupConfig): string[] { return config.skills.map(s=>typeof s==='string'?s:s.id); }
 export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
   const v=object(value,'setup config');
-  keys(v,['schemaVersion','platform','suite','agents','tracker','skills','mcps','decisionSupport']);
+  keys(v,['schemaVersion','platform','suite','agents','agentPrefix','tracker','skills','mcps','decisionSupport']);
   if (v.schemaVersion!==1) throw new Error('schemaVersion must be 1.');
   if (!supportedPlatforms.includes(v.platform as Platform)) throw new Error('Invalid platform.');
   if (!supportedTrackers.includes(v.tracker as Tracker)) throw new Error('Invalid tracker.');
   if (typeof v.suite!=='string' || !Object.hasOwn(suites,v.suite)) throw new Error('Invalid suite.');
   const suite=v.suite as keyof typeof suites;
-  const agents=strings(v.agents ?? suites[suite],'agents');
+  const rawAgents=strings(v.agents ?? suites[suite],'agents');
+  const agents=rawAgents.map(id=>id.startsWith('global-') && manifest.agents.some(agent=>agent.id===id.slice('global-'.length)) ? id.slice('global-'.length) : id);
   if (!agents.length || agents.some(id=>!manifest.agents.some(a=>a.id===id))) throw new Error('Select at least one known agent.');
+  const agentPrefix=v.agentPrefix ?? '';
+  if (typeof agentPrefix!=='string' || (agentPrefix!=='' && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(agentPrefix))) throw new Error('agentPrefix must be empty or a lowercase kebab-case identifier.');
   if (!Array.isArray(v.skills ?? [])) throw new Error('skills must be an array.');
   const skills: SkillSelection[]=(v.skills as unknown[] ?? []).map(s=>{
     if (typeof s==='string') { if (!manifest.skills.some(x=>x.id===s)) throw new Error(`Unknown skill: ${s}`); return s; }
@@ -99,5 +102,5 @@ export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
   if (mcps.some(id=>!['github','linear','trello','jev'].includes(id))) throw new Error('Unknown MCP.');
   const decisionSupport=decisionConfig(v.decisionSupport);
   if (mcps.includes('jev') && decisionSupport.mode==='off') throw new Error('Enable decisionSupport before selecting jev MCP.');
-  return {schemaVersion:1,platform:v.platform as Platform,suite,agents,tracker:v.tracker as Tracker,skills,mcps,decisionSupport};
+  return {schemaVersion:1,platform:v.platform as Platform,suite,agents,agentPrefix,tracker:v.tracker as Tracker,skills,mcps,decisionSupport};
 }

@@ -4,9 +4,9 @@
   "source": "user-global-agents",
   "agents": [
     {
-      "id": "global-aws-specialist",
-      "path": "agents/global-aws-specialist.md",
-      "sourceId": "global-aws-specialist.md",
+      "id": "aws-specialist",
+      "path": "agents/aws-specialist.md",
+      "sourceId": "aws-specialist.md",
       "sourceSha256": "f0d728c4ebf286e00a4a13ccbab6f52ceccdc3d91f8f07dcfb296a388c392125",
       "requiredSkills": [
         "worktree-task-isolation"
@@ -14,9 +14,9 @@
       "recommendedSkills": []
     },
     {
-      "id": "global-backend-developer",
-      "path": "agents/global-backend-developer.md",
-      "sourceId": "global-backend-developer.md",
+      "id": "backend-developer",
+      "path": "agents/backend-developer.md",
+      "sourceId": "backend-developer.md",
       "sourceSha256": "9a332a57999f5bc5ce72057f174606f248718c562c0aac40d6d1fe531e297079",
       "requiredSkills": [
         "developer-task-execution",
@@ -26,9 +26,9 @@
       "recommendedSkills": []
     },
     {
-      "id": "global-code-reviewer",
-      "path": "agents/global-code-reviewer.md",
-      "sourceId": "global-code-reviewer.md",
+      "id": "code-reviewer",
+      "path": "agents/code-reviewer.md",
+      "sourceId": "code-reviewer.md",
       "sourceSha256": "4c67aaccb75472b3246241fe24baf6d488b6f6ceb6413399bda7e958ed45259e",
       "requiredSkills": [
         "code-review-pr",
@@ -37,9 +37,9 @@
       "recommendedSkills": []
     },
     {
-      "id": "global-frontend-developer",
-      "path": "agents/global-frontend-developer.md",
-      "sourceId": "global-frontend-developer.md",
+      "id": "frontend-developer",
+      "path": "agents/frontend-developer.md",
+      "sourceId": "frontend-developer.md",
       "sourceSha256": "38d60982ddfe13bd4487d616fd55159c5c4759d16bf059a28a701e27a98c2f9a",
       "requiredSkills": [
         "developer-task-execution",
@@ -49,9 +49,9 @@
       "recommendedSkills": []
     },
     {
-      "id": "global-orchestrator",
-      "path": "agents/global-orchestrator.md",
-      "sourceId": "global-orchestrator.md",
+      "id": "orchestrator",
+      "path": "agents/orchestrator.md",
+      "sourceId": "orchestrator.md",
       "sourceSha256": "7dea28d8bb6eb2dfc0455d5e028b29a22b380d4f861e0c6aee661fc229501ca7",
       "requiredSkills": [
         "orchestrator-governance",
@@ -60,9 +60,9 @@
       "recommendedSkills": []
     },
     {
-      "id": "global-qa-automator",
-      "path": "agents/global-qa-automator.md",
-      "sourceId": "global-qa-automator.md",
+      "id": "qa-automator",
+      "path": "agents/qa-automator.md",
+      "sourceId": "qa-automator.md",
       "sourceSha256": "e1a1f1f68ec31d81f19818ded437414f0f776eccf61299537d910a11e36391ad",
       "requiredSkills": [
         "git-feature-workflow",
@@ -71,9 +71,9 @@
       "recommendedSkills": []
     },
     {
-      "id": "global-qa-manual",
-      "path": "agents/global-qa-manual.md",
-      "sourceId": "global-qa-manual.md",
+      "id": "qa-manual",
+      "path": "agents/qa-manual.md",
+      "sourceId": "qa-manual.md",
       "sourceSha256": "4019e6e6e50042d3887befc59545feef4102d8467e6d5f2f6f8bfbbc70445d4a",
       "requiredSkills": [
         "functional-review"

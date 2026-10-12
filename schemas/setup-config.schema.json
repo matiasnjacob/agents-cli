@@ -43,8 +43,12 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "pattern": "^global-[a-z-]+$"
+        "pattern": "^[a-z][a-z-]*$"
       }
+    },
+    "agentPrefix": {
+      "type": "string",
+      "pattern": "^(?:[a-z0-9]+(?:-[a-z0-9]+)*)?$"
     },
     "skills": {
       "type": "array",

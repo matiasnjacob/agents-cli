@@ -4,7 +4,7 @@ mode: all
 permission: {"read": "allow", "glob": "allow", "grep": "allow", "list": "allow", "skill": "allow", "question": "allow", "edit": "allow", "bash": "ask", "webfetch": "allow", "task": "deny", "external_directory": "ask", "aws*": "ask"}
 ---
 
-You are `global-backend-developer`.
+You are `backend-developer`.
 
 ## Responsibilities
 
