@@ -1,11 +1,11 @@
 import {createInterface} from 'node:readline';
-import { cancel, intro, isCancel, log, multiselect, select, text } from '@clack/prompts';
+import { cancel, intro, isCancel, log, multiselect, select, text, updateSettings } from '@clack/prompts';
 import {supportedPlatforms,supportedTrackers} from '../contract.js';
 import {resolveConfig,suites,type Manifest,type SetupConfig} from './config.js';
 
 type SelectOptions = {message:string;options:{value:string;label?:string;hint?:string}[];initialValue?:string;maxItems?:number};
 type MultiOptions = {message:string;options:{value:string;label?:string;hint?:string}[];initialValues?:string[];required?:boolean;maxItems?:number};
-type TextOptions = {message:string;placeholder?:string;defaultValue?:string;validate?:(value:string)=>string|Error|undefined};
+type TextOptions = {message:string;placeholder?:string;defaultValue?:string;initialValue?:string;validate?:(value:string)=>string|Error|undefined};
 export interface WizardPrompts {
   intro:(title?:string)=>void;
   select:(options:SelectOptions)=>Promise<string|symbol>;
@@ -16,7 +16,14 @@ export interface WizardPrompts {
   log:{info:(message:string)=>void};
 }
 
-const defaultPrompts:WizardPrompts={intro,select,multiselect,text,isCancel,cancel,log};
+const defaultPrompts:WizardPrompts={intro,select:options=>select(options as Parameters<typeof select>[0]) as Promise<string|symbol>,multiselect:options=>multiselect(options as Parameters<typeof multiselect>[0]) as Promise<string[]|symbol>,text:options=>text(options as Parameters<typeof text>[0]) as Promise<string|symbol>,isCancel,cancel,log};
+updateSettings({aliases:{'\u0004':'cancel'}});
+
+export function cancelPromptOnInputEnd(input:NodeJS.ReadStream):()=>void {
+  const onEnd=()=>input.emit('keypress','\u0004',{name:'eof',sequence:'\u0004'});
+  input.on('end',onEnd);
+  return ()=>input.off('end',onEnd);
+}
 
 export function renderWelcomeBanner(columns=80):string {
   const rows=['[]  []  []','Agents-Cli','Matias Jacob'];
@@ -45,7 +52,7 @@ export async function collectAnswers(manifest:Manifest,previous?:SetupConfig,pro
   const prefixValue=accepted(await prompts.text({
     message:'Project prefix for installed agents (optional)',
     placeholder:'Leave blank for no prefix',
-    defaultValue:previous?.agentPrefix ?? '',
+    initialValue:previous?.agentPrefix ?? '',
     validate:value=>value===''||/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)?undefined:'Prefix must use lowercase letters, numbers, and hyphens.',
   }),prompts);
   const agentOptions=manifest.agents.map(agent=>({value:agent.id,label:prefixValue?`${prefixValue}-${agent.id}`:agent.id}));
@@ -58,8 +65,10 @@ export async function collectAnswers(manifest:Manifest,previous?:SetupConfig,pro
   prompts.log.info(`MCPs: ${mcps.length} selected`);
   const required=new Set(agents.flatMap(id=>manifest.agents.find(agent=>agent.id===id)?.requiredSkills ?? []));
   const previousSkills=previous?.skills.filter((skill):skill is string=>typeof skill==='string') ?? [];
-  const skillOptions=manifest.skills.map(skill=>({value:skill.id,label:skill.id,...(required.has(skill.id)?{hint:'required by selected agent'}:{})}));
-  const skills=accepted(await prompts.multiselect({message:'Select optional skills (required skills stay enabled; ↑/↓ move, Space toggle, Enter continue)',options:skillOptions,initialValues:[...new Set([...required,...previousSkills])],required:false,maxItems:12}),prompts);
+  const skillOptions=manifest.skills.filter(skill=>!required.has(skill.id)).map(skill=>({value:skill.id,label:skill.id}));
+  prompts.log.info(`Required skills: ${[...required].join(', ') || 'none'} (always enabled)`);
+  const optionalSkills=accepted(await prompts.multiselect({message:'Select optional skills (required skills stay enabled; ↑/↓ move, Space toggle, Enter continue)',options:skillOptions,initialValues:previousSkills.filter(skill=>!required.has(skill)),required:false,maxItems:12}),prompts);
+  const skills=[...new Set([...required,...optionalSkills])];
   prompts.log.info(`Skills: ${skills.length} selected`);
   const mode=accepted(await prompts.select({message:'Choose JEV decision support mode',options:labels(['off','shadow','assist']),initialValue:previous?.decisionSupport.mode ?? 'off'}),prompts);
   const priorExternal=previous?.skills.filter((skill):skill is Exclude<typeof skill,string>=>typeof skill!=='string') ?? [];

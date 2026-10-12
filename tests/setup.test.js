@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, mkdtemp, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { readFile, mkdtemp, mkdir, readdir, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { renderCodex } from '../dist/adapters/codex/render.js';
@@ -35,6 +35,16 @@ test('backend selection renders only its requested roles on each platform', asyn
     const files = await render({catalogRoot, selectedAgents:['backend-developer'], selectedSkills:[]});
     assert.equal(files.some(f => /frontend-developer\.(md|toml)$/.test(f.path)), false);
     assert.equal(files.some(f => /backend-developer\.(md|toml)$/.test(f.path)), true);
+  }
+});
+test('prefix updates cross-agent references on every adapter',async()=>{
+  for (const [render,dir,ext] of [[renderCodex,'.codex/agents/','.toml'],[renderClaude,'.claude/agents/','.md'],[renderOpenCode,'.opencode/agents/','.md'],[renderPi,'.pi/agents/','.md']]) {
+    const files=await render({catalogRoot,selectedAgents:['orchestrator'],selectedSkills:[],agentPrefix:'acme'});
+    const orchestrator=files.find(file=>file.path===`${dir}acme-orchestrator${ext}`);
+    assert.ok(orchestrator);
+    assert.match(orchestrator.content,/acme-code-reviewer/);
+    assert.match(orchestrator.content,/acme-qa-manual/);
+    assert.doesNotMatch(orchestrator.content,/`(?:code-reviewer|qa-manual)`/);
   }
 });
 test('preset resolution includes role skill dependencies and rejects invalid configuration', async () => {
@@ -95,6 +105,22 @@ test('migrates unchanged locked 0.4.1 agent paths and preserves foreign legacy f
   assert.equal(await readFile(join(root,'.codex/agents/acme-backend-developer.toml'),'utf8').then(Boolean),true);
 });
 
+test('reports an untracked legacy agent path as a migration conflict on every platform',async()=>{
+  const {resolveConfig}=await import('../dist/setup/config.js');
+  const {prepareSetup}=await import('../dist/setup/install.js');
+  const {applyInstall}=await import('../dist/install/engine.js');
+  const cases=[['codex','.codex/agents/global-backend-developer.toml'],['claude','.claude/agents/global-backend-developer.md'],['opencode','.opencode/agents/global-backend-developer.md'],['pi','.pi/agents/global-backend-developer.md']];
+  for (const [platform,path] of cases) {
+    const root=await mkdtemp(join(tmpdir(),'legacy-untracked-'));
+    await mkdir(join(root,path,'..'),{recursive:true});
+    await writeFile(join(root,path),'user-owned\n');
+    const config=resolveConfig({...input,platform,suite:'backend',agents:['backend-developer'],agentPrefix:'acme'},manifest);
+    const prepared=await prepareSetup(root,catalogRoot,config);
+    const preview=await applyInstall({root,catalogVersion:'test',files:prepared.files,dryRun:true});
+    assert.ok(preview.conflicts.includes(path),`${platform} should report ${path}`);
+  }
+});
+
 test('preserves edited locked legacy files and dry-run does not migrate them', async()=>{
   const {resolveConfig}=await import('../dist/setup/config.js');
   const {prepareSetup}=await import('../dist/setup/install.js');
@@ -112,4 +138,23 @@ test('preserves edited locked legacy files and dry-run does not migrate them', a
   assert.ok(applied.conflicts.includes(oldPath));
   assert.equal(await readFile(join(root,oldPath),'utf8'),'user edit\n');
   assert.equal(await readFile(join(root,'.codex/agents/acme-backend-developer.toml')).then(()=>true,()=>false),false);
+});
+
+test('missing locked legacy files are a safe no-op and fresh projects show no phantom removals',async()=>{
+  const {resolveConfig}=await import('../dist/setup/config.js');
+  const {prepareSetup}=await import('../dist/setup/install.js');
+  const {applyInstall}=await import('../dist/install/engine.js');
+  const root=await mkdtemp(join(tmpdir(),'legacy-missing-'));
+  const oldPath='.codex/agents/global-backend-developer.toml';
+  await applyInstall({root,catalogVersion:'0.4.1',files:[{path:oldPath,content:'managed legacy\n'}]});
+  await unlink(join(root,oldPath));
+  const config=resolveConfig({...input,agents:['backend-developer'],agentPrefix:'acme'},manifest);
+  const prepared=await prepareSetup(root,catalogRoot,config);
+  const preview=await applyInstall({root,catalogVersion:'test',files:prepared.files,dryRun:true});
+  assert.ok(preview.unchanged.includes(oldPath));
+  assert.deepEqual(preview.conflicts,[]);
+  const fresh=await mkdtemp(join(tmpdir(),'legacy-fresh-'));
+  const freshPrepared=await prepareSetup(fresh,catalogRoot,config);
+  const freshPlan=await applyInstall({root:fresh,catalogVersion:'test',files:freshPrepared.files,dryRun:true});
+  assert.equal(freshPlan.unchanged.some(path=>path.includes('global-')),false);
 });

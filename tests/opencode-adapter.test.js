@@ -24,11 +24,17 @@ test("preserves OpenCode front matter and selected skill references", async () =
 });
 
 test('applies an optional prefix to OpenCode agent files, IDs, and visible names', async () => {
-  const files=await renderOpenCode({catalogRoot,selectedAgents:['backend-developer'],selectedSkills:[],agentPrefix:'acme'});
-  const agent=files.find(file=>file.path==='.opencode/agents/acme-backend-developer.md');
+  const files=await renderOpenCode({catalogRoot,selectedAgents:['orchestrator'],selectedSkills:[],agentPrefix:'acme'});
+  const agent=files.find(file=>file.path==='.opencode/agents/acme-orchestrator.md');
   assert.ok(agent);
-  assert.match(agent.content,/You are `acme-backend-developer`\./);
-  assert.match(files.find(file=>file.path==='.opencode/agents/manifest.json').content,/acme-backend-developer/);
+  assert.match(agent.content,/You are `acme-orchestrator`\./);
+  assert.match(agent.content,/`acme-code-reviewer`/);
+  assert.match(agent.content,/`acme-qa-manual`/);
+  assert.doesNotMatch(agent.content,/`(?:code-reviewer|qa-manual|backend-developer)`/);
+  assert.match(agent.content,/"\*":"deny"/);
+  assert.match(agent.content,/"acme-backend-developer":"allow"/);
+  assert.doesNotMatch(agent.content,/"\*":"allow"/);
+  assert.match(files.find(file=>file.path==='.opencode/agents/manifest.json').content,/acme-orchestrator/);
 });
 
 test("does not generate a global OpenCode config that could overwrite providers or MCP", async () => {

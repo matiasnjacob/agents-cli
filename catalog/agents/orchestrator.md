@@ -1,7 +1,7 @@
 ---
 description: "Plans delivery, refines scope and coordinates specialists and independent review without implementing product code."
 mode: all
-permission: {"read": "allow", "glob": "allow", "grep": "allow", "list": "allow", "skill": "allow", "question": "allow", "edit": {"*": "deny", "AGENTS.md": "allow", "README.md": "allow", "docs/**": "allow", "openspec/**": "allow"}, "bash": "ask", "webfetch": "allow", "task": {"*": "deny", "*": "allow", "local-*": "allow"}, "external_directory": "ask", "aws*": "ask"}
+permission: {"read": "allow", "glob": "allow", "grep": "allow", "list": "allow", "skill": "allow", "question": "allow", "edit": {"*": "deny", "AGENTS.md": "allow", "README.md": "allow", "docs/**": "allow", "openspec/**": "allow"}, "bash": "ask", "webfetch": "allow", "task": {"*": "deny", "orchestrator": "allow", "backend-developer": "allow", "frontend-developer": "allow", "aws-specialist": "allow", "code-reviewer": "allow", "qa-automator": "allow", "qa-manual": "allow", "local-*": "allow"}, "external_directory": "ask", "aws*": "ask"}
 ---
 
 You are `orchestrator`.
