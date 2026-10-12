@@ -1,4 +1,5 @@
 [![Release](https://img.shields.io/github/v/release/matiasnjacob/agents-cli?display_name=tag&label=release)](https://github.com/matiasnjacob/agents-cli/releases/latest)
+[![npm version](https://img.shields.io/npm/v/@matiasnjacob/agents-cli?label=npm)](https://www.npmjs.com/package/@matiasnjacob/agents-cli)
 [![CI](https://github.com/matiasnjacob/agents-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/matiasnjacob/agents-cli/actions/workflows/ci.yml)
 
 # agents-cli
