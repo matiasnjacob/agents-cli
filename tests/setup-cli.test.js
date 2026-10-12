@@ -7,6 +7,11 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 const exec=promisify(execFile),cli=join(import.meta.dirname,'../dist/cli/index.js');
 const fixture={schemaVersion:1,platform:'claude',suite:'backend',tracker:'none',skills:[],mcps:[],decisionSupport:{mode:'off'}};
+test('setup preview summary lists prefixed agent names and every planned action',async()=>{
+  const {formatSetupPreview}=await import('../dist/setup/command.js');
+  const summary=formatSetupPreview({config:{platform:'codex',suite:'backend',agents:['backend-developer'],agentPrefix:'acme'},creates:['.codex/agents/acme-backend-developer.toml'],updates:['.codex/AGENTS.md'],removes:['.codex/agents/global-backend-developer.toml'],conflicts:['.codex/agents/custom.toml']});
+  for (const expected of ['acme-backend-developer','CREATE .codex/agents/acme-backend-developer.toml','UPDATE .codex/AGENTS.md','REMOVE .codex/agents/global-backend-developer.toml','CONFLICT .codex/agents/custom.toml']) assert.ok(summary.includes(expected),expected);
+});
 test('setup dry-run is side-effect-free; apply and replay preserve suite and skills add',async()=>{
   const root=await mkdtemp(join(tmpdir(),'setup-cli-'));
   await writeFile(join(root,'input.json'),JSON.stringify(fixture));
@@ -19,7 +24,7 @@ test('setup dry-run is side-effect-free; apply and replay preserve suite and ski
   await run(['skills','add','functional-review','--platform','claude']);
   const preview=await run(['update','--dry-run']);
   assert.equal(preview.creates.length,0);assert.equal(preview.updates.length,0);
-  assert.equal(preview.config.agents.includes('global-frontend-developer'),false);
+  assert.equal(preview.config.agents.includes('frontend-developer'),false);
 });
 test('setup rejects non-TTY without config, unknown flags and missing option values promptly',async()=>{
   for (const args of [['setup'],['setup','--wat'],['setup','--config','--yes']]) {
