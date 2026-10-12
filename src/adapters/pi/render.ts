@@ -2,11 +2,13 @@ import { readFile, readdir } from "node:fs/promises";
 import { basename, join } from "node:path";
 import type { InstallFile } from "../../install/engine.js";
 import { piSubagentExtension } from "./subagent-extension.js";
+import { applyAgentPrefix } from "../agent-prefix.js";
 
 export interface PiRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
   selectedAgents?: string[];
+  agentPrefix?: string;
 }
 
 interface AgentSource {
@@ -20,7 +22,7 @@ export async function renderPi(options: PiRenderOptions): Promise<InstallFile[]>
   const agentRoot = join(options.catalogRoot, "agents");
   const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md") && (!options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")))).sort();
   const skills = options.selectedSkills ?? [];
-  const agents = await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8"))));
+  const agents = applyAgentPrefix(await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8")))),options.agentPrefix);
   const files: InstallFile[] = agents.map((agent) => ({
     path: `.pi/agents/${agent.id}.md`,
     content: renderAgent(agent, skills),

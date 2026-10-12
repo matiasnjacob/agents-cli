@@ -1,11 +1,13 @@
 import { readFile, readdir } from "node:fs/promises";
 import { basename, join } from "node:path";
 import type { InstallFile } from "../../install/engine.js";
+import { applyAgentPrefix } from "../agent-prefix.js";
 
 export interface CodexRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
   selectedAgents?: string[];
+  agentPrefix?: string;
 }
 
 interface AgentSource {
@@ -19,7 +21,7 @@ export async function renderCodex(options: CodexRenderOptions): Promise<InstallF
   const agentRoot = join(options.catalogRoot, "agents");
   const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md") && (!options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")))).sort();
   const skills = options.selectedSkills ?? [];
-  const agents = await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8"))));
+  const agents = applyAgentPrefix(await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8")))),options.agentPrefix);
   const files = agents.map((agent) => ({
     path: `.codex/agents/${agent.id}.toml`,
     content: renderAgent(agent, skills),

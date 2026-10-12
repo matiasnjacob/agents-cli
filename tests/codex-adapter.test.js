@@ -16,18 +16,26 @@ test("renders all seven canonical Codex agents and project instructions", async 
 
 test("renders a valid named role with skill reference and permission mapping", async () => {
   const files = await renderCodex({ catalogRoot, selectedSkills: ["orchestrator-governance", "git-feature-workflow"] });
-  const orchestrator = files.find((file) => file.path === ".codex/agents/global-orchestrator.toml");
+  const orchestrator = files.find((file) => file.path === ".codex/agents/orchestrator.toml");
   assert.ok(orchestrator);
-  assert.match(orchestrator.content, /^name = "global-orchestrator"/m);
+  assert.match(orchestrator.content, /^name = "orchestrator"/m);
   assert.match(orchestrator.content, /\.codex\/skills\/orchestrator-governance\/SKILL\.md/);
   assert.match(orchestrator.content, /developer_instructions = /);
 });
 
 test("preserves read-only and delegation-denied role semantics", async () => {
   const files = await renderCodex({ catalogRoot });
-  const reviewer = files.find((file) => file.path === ".codex/agents/global-code-reviewer.toml");
-  const aws = files.find((file) => file.path === ".codex/agents/global-aws-specialist.toml");
+  const reviewer = files.find((file) => file.path === ".codex/agents/code-reviewer.toml");
+  const aws = files.find((file) => file.path === ".codex/agents/aws-specialist.toml");
   assert.ok(reviewer && aws);
   assert.match(reviewer.content, /sandbox_mode = "read-only"/);
   assert.match(aws.content, /\[agents\]\nenabled = false/);
+});
+
+test('applies an optional prefix to Codex files, IDs, and visible names', async () => {
+  const files = await renderCodex({catalogRoot, selectedAgents:['backend-developer'], selectedSkills:[], agentPrefix:'acme'});
+  const agent = files.find(file => file.path === '.codex/agents/acme-backend-developer.toml');
+  assert.ok(agent);
+  assert.match(agent.content, /^name = "acme-backend-developer"/m);
+  assert.match(files.find(file=>file.path==='.codex/agents/manifest.json').content,/acme-backend-developer/);
 });

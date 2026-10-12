@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, mkdtemp, readdir, writeFile } from 'node:fs/promises';
+import { readFile, mkdtemp, mkdir, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { renderCodex } from '../dist/adapters/codex/render.js';
@@ -72,4 +72,44 @@ test('changing suite removes only unchanged managed roles and preserves edited r
   const second=await prepareSetup(root,catalogRoot,resolveConfig({...input,suite:'review-qa'},manifest));
   await applyInstall({root,catalogVersion:'test',files:second.files});
   assert.equal((await readdir(join(root,'.codex/agents'))).includes('backend-developer.toml'),false);
+});
+
+test('migrates unchanged locked 0.4.1 agent paths and preserves foreign legacy files', async()=>{
+  const {resolveConfig}=await import('../dist/setup/config.js');
+  const {prepareSetup}=await import('../dist/setup/install.js');
+  const {applyInstall}=await import('../dist/install/engine.js');
+  const root=await mkdtemp(join(tmpdir(),'legacy-migrate-'));
+  const oldPath='.codex/agents/global-backend-developer.toml';
+  const foreignPath='.codex/agents/global-foreign.md';
+  await mkdir(join(root,'.codex/agents'),{recursive:true});
+  await writeFile(join(root,foreignPath),'user-owned\n');
+  await applyInstall({root,catalogVersion:'0.4.1',files:[{path:oldPath,content:'managed legacy\n'}]});
+  const config=resolveConfig({...input,agents:['global-backend-developer'],agentPrefix:'acme'},manifest);
+  const prepared=await prepareSetup(root,catalogRoot,config);
+  const preview=await applyInstall({root,catalogVersion:'test',files:prepared.files,dryRun:true});
+  assert.ok(preview.removes.some(file=>file.path===oldPath));
+  assert.ok(preview.creates.some(file=>file.path==='.codex/agents/acme-backend-developer.toml'));
+  assert.equal(await readFile(join(root,foreignPath),'utf8'),'user-owned\n');
+  assert.equal((await applyInstall({root,catalogVersion:'test',files:prepared.files})).conflicts.length,0);
+  assert.equal(await readFile(join(root,foreignPath),'utf8'),'user-owned\n');
+  assert.equal(await readFile(join(root,'.codex/agents/acme-backend-developer.toml'),'utf8').then(Boolean),true);
+});
+
+test('preserves edited locked legacy files and dry-run does not migrate them', async()=>{
+  const {resolveConfig}=await import('../dist/setup/config.js');
+  const {prepareSetup}=await import('../dist/setup/install.js');
+  const {applyInstall}=await import('../dist/install/engine.js');
+  const root=await mkdtemp(join(tmpdir(),'legacy-conflict-'));
+  const oldPath='.codex/agents/global-backend-developer.toml';
+  await applyInstall({root,catalogVersion:'0.4.1',files:[{path:oldPath,content:'managed legacy\n'}]});
+  await writeFile(join(root,oldPath),'user edit\n');
+  const config=resolveConfig({...input,agents:['global-backend-developer'],agentPrefix:'acme'},manifest);
+  const prepared=await prepareSetup(root,catalogRoot,config);
+  const preview=await applyInstall({root,catalogVersion:'test',files:prepared.files,dryRun:true});
+  assert.ok(preview.conflicts.includes(oldPath));
+  assert.equal(preview.creates.some(file=>file.path==='.codex/agents/acme-backend-developer.toml'),true);
+  const applied=await applyInstall({root,catalogVersion:'test',files:prepared.files});
+  assert.ok(applied.conflicts.includes(oldPath));
+  assert.equal(await readFile(join(root,oldPath),'utf8'),'user edit\n');
+  assert.equal(await readFile(join(root,'.codex/agents/acme-backend-developer.toml')).then(()=>true,()=>false),false);
 });
