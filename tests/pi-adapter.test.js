@@ -17,13 +17,21 @@ test("renders seven Pi agents, a delegation extension, and project instructions"
 
 test("maps Pi tools conservatively and references native Pi skills", async () => {
   const files = await renderPi({ catalogRoot, selectedSkills: ["orchestrator-governance"] });
-  const orchestrator = files.find((file) => file.path === ".pi/agents/global-orchestrator.md");
-  const backend = files.find((file) => file.path === ".pi/agents/global-backend-developer.md");
+  const orchestrator = files.find((file) => file.path === ".pi/agents/orchestrator.md");
+  const backend = files.find((file) => file.path === ".pi/agents/backend-developer.md");
   assert.ok(orchestrator && backend);
   assert.match(orchestrator.content, /tools: read, grep, find, ls, bash/);
   assert.doesNotMatch(orchestrator.content, /tools: .*edit/);
   assert.match(backend.content, /tools: .*edit, write/);
   assert.match(orchestrator.content, /\.pi\/skills\/orchestrator-governance\/SKILL\.md/);
+});
+
+test('applies an optional prefix to Pi agent files, IDs, names, and manifest', async () => {
+  const files=await renderPi({catalogRoot,selectedAgents:['backend-developer'],selectedSkills:[],agentPrefix:'acme'});
+  const agent=files.find(file=>file.path==='.pi/agents/acme-backend-developer.md');
+  assert.ok(agent);
+  assert.match(agent.content,/name: acme-backend-developer/);
+  assert.match(files.find(file=>file.path==='.pi/agents/manifest.json').content,/acme-backend-developer/);
 });
 
 test("generated Pi extension delegates without shell interpolation and inherits runtime model", async () => {

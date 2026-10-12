@@ -10,13 +10,13 @@ Seven reusable Markdown roles are present in `~/.agents/agents/`:
 
 | Agent | Responsibility | Codex adapter | Delegation |
 | --- | --- | --- | --- |
-| `global-orchestrator` | Plans delivery, refines scope, coordinates specialists, and maintains governance artifacts. | `inherit` sandbox | inherited |
-| `global-backend-developer` | Implements backend APIs, business logic, persistence, and backend tests. | `inherit` sandbox | disabled |
-| `global-frontend-developer` | Implements frontend behavior, accessible UI, client integration, and UI tests. | `inherit` sandbox | disabled |
-| `global-aws-specialist` | Designs AWS integrations, infrastructure code, and operational workflows with explicit authorization. | `inherit` sandbox | disabled |
-| `global-code-reviewer` | Independently reviews correctness, security, architecture, regressions, and test coverage. | `read-only` sandbox | disabled |
-| `global-qa-automator` | Finds coverage gaps and creates or runs deterministic automated tests. | `inherit` sandbox | disabled |
-| `global-qa-manual` | Performs independent functional and exploratory acceptance validation. | `inherit` sandbox | disabled |
+| `orchestrator` | Plans delivery, refines scope, coordinates specialists, and maintains governance artifacts. | `inherit` sandbox | inherited |
+| `backend-developer` | Implements backend APIs, business logic, persistence, and backend tests. | `inherit` sandbox | disabled |
+| `frontend-developer` | Implements frontend behavior, accessible UI, client integration, and UI tests. | `inherit` sandbox | disabled |
+| `aws-specialist` | Designs AWS integrations, infrastructure code, and operational workflows with explicit authorization. | `inherit` sandbox | disabled |
+| `code-reviewer` | Independently reviews correctness, security, architecture, regressions, and test coverage. | `read-only` sandbox | disabled |
+| `qa-automator` | Finds coverage gaps and creates or runs deterministic automated tests. | `inherit` sandbox | disabled |
+| `qa-manual` | Performs independent functional and exploratory acceptance validation. | `inherit` sandbox | disabled |
 
 Each role has a Codex TOML adapter under `adapters/codex/global/` and an OpenCode Markdown source. Models are not pinned. Codex adapter behavior is derived from `adapters/codex/global/manifest.json`; OpenCode-specific UI fields are not portable guarantees.
 

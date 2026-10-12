@@ -1,12 +1,14 @@
 import { readFile, readdir } from "node:fs/promises";
 import { basename, join } from "node:path";
 import type { InstallFile } from "../../install/engine.js";
+import { applyAgentPrefix } from "../agent-prefix.js";
 
 export interface ClaudeRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
   selectedAgents?: string[];
   selectedMcpServers?: string[];
+  agentPrefix?: string;
 }
 
 interface AgentSource {
@@ -30,9 +32,10 @@ const toolNames: Record<string, string> = {
 
 export async function renderClaude(options: ClaudeRenderOptions): Promise<InstallFile[]> {
   const agentRoot = join(options.catalogRoot, "agents");
-  const paths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md") && (!options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")))).sort();
+  const allPaths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md")).sort();
+  const paths = allPaths.filter((path) => !options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")));
   const skills = options.selectedSkills ?? [];
-  const agents = await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8"))));
+  const agents = applyAgentPrefix(await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8")))),options.agentPrefix,allPaths.map(path=>basename(path,".md")));
   const files = agents.map((agent) => ({
     path: `.claude/agents/${agent.id}.md`,
     content: renderAgent(agent, skills, options.selectedMcpServers ?? []),

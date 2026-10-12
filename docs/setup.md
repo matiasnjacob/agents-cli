@@ -15,9 +15,13 @@ packages or authentication credentials. If the CLI reports `setup` or
 `npm list --global @matiasnjacob/agents-cli` to check which executable is active.
 
 The wizard selects platform, suite, agents, tracker, MCPs, skills and optional JEV.
-Enter selects the displayed default; numeric/name choices and comma-separated
-multiple selections are supported. `-` clears a multiple selection; `q`, `cancel`,
-EOF or Ctrl-C cancels before application. Application requires the literal `yes`.
+Use the arrow keys and Enter for single choices; use the arrow keys, Space to
+toggle, and Enter to finish each multi-select. The preset and any previous
+configuration are preselected. The banner identifies Agents-Cli by Matias Jacob.
+An optional lowercase kebab-case project prefix (for example `acme`) is applied
+to visible agent names, runtime IDs and generated filenames. Leave it blank to
+keep the canonical names. Ctrl-C cancels before application. The final summary
+lists every planned create, update, removal and conflict before confirmation.
 
 Suites are `complete`, `backend`, `frontend`, `review-qa` and `custom`. Roles can be
 adjusted independently. Required skills are included automatically. Existing setup
@@ -39,7 +43,11 @@ Paths are relative to the current repository or absolute. Setup writes the resol
 required with `--config --yes` or `--config --dry-run`. `--yes` without a config is
 rejected. New commands reject unknown, repeated or missing-value flags.
 
-The engine detects local edits using `.agents-cli.lock.json`. Conflicts prevent all
+The engine detects local edits using `.agents-cli.lock.json`. When reading a
+0.4.1 configuration, known `global-*` agent IDs are normalized automatically.
+Applying setup removes only unchanged legacy files recorded in the lock and
+replaces them with canonical or prefixed filenames. Edited and untracked legacy
+files are preserved; edited locked files are reported as conflicts. Conflicts prevent all
 installation writes. Unchanged managed roles and skills no longer selected are
 removed with backups; edited ones remain conflicts. Changing platforms preserves
 other platforms' files. `skills add` preserves the setup selection and subsequent

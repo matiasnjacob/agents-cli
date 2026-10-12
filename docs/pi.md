@@ -21,7 +21,7 @@ Pi loads `.pi` resources only after project trust is granted. Review generated o
 Ask the main agent to delegate with a named role, or let it call the generated tool:
 
 ```text
-Use global-code-reviewer to review the current diff and report findings only.
+Use code-reviewer to review the current diff and report findings only.
 ```
 
 The tool starts a separate one-shot Pi process with the selected role as appended system instructions. It inherits the parent session's model and thinking level, uses an explicit built-in-tool allowlist, disables extensions in the child process to prevent recursive delegation, and does not persist a child session.

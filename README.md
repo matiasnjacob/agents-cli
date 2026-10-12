@@ -9,7 +9,7 @@ project workflow guidance.
 
 It is designed for people who want the same development roles and conventions
 in every project without copying private home-directory configuration. The
-catalog preserves the current seven global agents and renders them for
+catalog preserves seven portable roles and renders them for
 Codex, OpenCode, Claude Code, or Pi.
 
 Install the published CLI from npm as `@matiasnjacob/agents-cli`. Check the
@@ -42,13 +42,13 @@ The catalog contains these seven roles:
 
 | Agent | Responsibility |
 | --- | --- |
-| `global-orchestrator` | Plans delivery, refines scope, coordinates specialists and independent review. |
-| `global-backend-developer` | Implements backend APIs, business logic, persistence and backend tests. |
-| `global-frontend-developer` | Implements accessible frontend behavior, client integration and UI tests. |
-| `global-aws-specialist` | Designs AWS integrations, infrastructure and operational workflows with explicit authorization for cloud mutations. |
-| `global-code-reviewer` | Independently reviews correctness, security, architecture, regressions and test coverage. |
-| `global-qa-automator` | Finds coverage gaps and authors deterministic automated tests against acceptance criteria. |
-| `global-qa-manual` | Performs exploratory and functional acceptance testing and records reproducible evidence. |
+| `orchestrator` | Plans delivery, refines scope, coordinates specialists and independent review. |
+| `backend-developer` | Implements backend APIs, business logic, persistence and backend tests. |
+| `frontend-developer` | Implements accessible frontend behavior, client integration and UI tests. |
+| `aws-specialist` | Designs AWS integrations, infrastructure and operational workflows with explicit authorization for cloud mutations. |
+| `code-reviewer` | Independently reviews correctness, security, architecture, regressions and test coverage. |
+| `qa-automator` | Finds coverage gaps and authors deterministic automated tests against acceptance criteria. |
+| `qa-manual` | Performs exploratory and functional acceptance testing and records reproducible evidence. |
 
 Roles are intentionally separate from model selection. `agents-cli` does not
 pin a model, provider or account for the generated agents.
@@ -107,8 +107,10 @@ agents-cli --version
 agents-cli setup
 ```
 
-Node.js 20 or newer is required. The setup command lets you choose a suite,
-platform, MCPs, skills and optional JEV decision support.
+Node.js 20 or newer is required. The setup command uses arrow keys and Enter
+for single choices, and arrow keys, Space and Enter for multi-selects. Choose
+a suite, platform, MCPs, skills, optional JEV decision support, and an optional
+lowercase kebab-case project prefix such as `acme` for generated agent names.
 
 If `--version` or `setup` is reported as unknown, check `command -v agents-cli`
 and `npm list --global @matiasnjacob/agents-cli`. Your shell may be resolving a

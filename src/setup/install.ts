@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { renderCodex } from '../adapters/codex/render.js';
 import { renderClaude } from '../adapters/claude/render.js';
@@ -11,7 +11,7 @@ import {mcpCatalog,prepareMcp} from './mcp.js';
 import {resolveExternalSkill} from './external.js';
 export async function prepareSetup(root:string,catalogRoot:string,config:SetupConfig): Promise<{files:InstallFile[];pending:string[]}> {
   const render={codex:renderCodex,claude:renderClaude,opencode:renderOpenCode,pi:renderPi}[config.platform];
-  const files=await render({catalogRoot,selectedAgents:config.agents,selectedSkills:skillIds(config),...(config.platform==='claude'?{selectedMcpServers:config.mcps.filter(id=>mcpCatalog.find(entry=>entry.id===id)?.platforms.includes('claude')).map(id=>`agents-cli-${id}`)}:{})});
+  const files=await render({catalogRoot,selectedAgents:config.agents,selectedSkills:skillIds(config),agentPrefix:config.agentPrefix,...(config.platform==='claude'?{selectedMcpServers:config.mcps.filter(id=>mcpCatalog.find(entry=>entry.id===id)?.platforms.includes('claude')).map(id=>`agents-cli-${id}`)}:{})});
   files.push(...await renderSkillFiles(catalogRoot,await readCatalog(catalogRoot),config.skills.filter((s):s is string=>typeof s==='string'),config.platform));
   const provenance=[];
   for (const source of config.skills) if (typeof source!=='string') {
@@ -34,7 +34,14 @@ export async function prepareSetup(root:string,catalogRoot:string,config:SetupCo
   let lock:{files:Record<string,string>}|undefined;
   try {lock=JSON.parse(await readFile(join(root,LOCKFILE),'utf8'));} catch(e) {if ((e as NodeJS.ErrnoException).code!=='ENOENT') throw e;}
   const desired=new Set(files.map(f=>f.path));
-  for (const path of Object.keys(lock?.files ?? {})) {
+  const legacyExtension=config.platform==='codex'?'toml':'md';
+  const legacyPaths:string[]=[];
+  for (const source of (await readdir(join(catalogRoot,'agents'))).filter(path=>path.endsWith('.md'))) {
+    const path=`.${config.platform}/agents/global-${source.slice(0,-3)}.${legacyExtension}`;
+    await assertNoSymlinks(root,path);
+    try {await readFile(join(root,path));legacyPaths.push(path);} catch(error) {if ((error as NodeJS.ErrnoException).code!=='ENOENT') throw error;}
+  }
+  for (const path of new Set([...Object.keys(lock?.files ?? {}),...legacyPaths])) {
     if ((path.startsWith(`.${config.platform}/agents/`) || path.startsWith(`.${config.platform}/skills/`) || path.startsWith('.agents/workflows/') || path==='.agents/external-skills.json') && !desired.has(path)) files.push({path,content:'',remove:true});
   }
   return {files,pending};

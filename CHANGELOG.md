@@ -29,6 +29,15 @@ and releases use semantic versioning.
 - Add `agents-cli --version` and `agents-cli -v` to report the installed package version.
 - List the interactive `setup` command in CLI help and document how to identify an outdated executable on `PATH`.
 
+## 0.4.2 — prepared for release
+
+### Added
+
+- Replace numeric setup prompts with an arrow-key and Space multi-select terminal wizard, including a boxed Agents-Cli / Matias Jacob welcome banner and install progress.
+- Add optional project prefixes to visible agent names, runtime identifiers and generated filenames across Codex, Claude Code, OpenCode and Pi.
+- Normalize known 0.4.1 `global-*` agent selections and safely migrate only unchanged CLI-managed files; preserve edited and foreign files as conflicts or user data.
+- Pin `@clack/prompts` 0.11.0 while preserving the package's Node.js 20 minimum.
+
 ## [Unreleased]
 
 ### Planned
