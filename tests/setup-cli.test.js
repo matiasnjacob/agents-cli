@@ -26,12 +26,35 @@ test('setup rejects non-TTY without config, unknown flags and missing option val
     await assert.rejects(exec(process.execPath,[cli,...args],{timeout:3000}),e=>/--config|Unknown|value/.test(e.stderr));
   }
 });
-test('wizard collects suite/MCP/skills/JEV and cancellation leaves no configuration',async()=>{
-  const {collectAnswers}=await import('../dist/setup/wizard.js');
+test('wizard presents keyboard prompts, preserves preset dependencies, captures prefix, and cancels cleanly',async()=>{
+  const {collectAnswers,renderWelcomeBanner}=await import('../dist/setup/wizard.js');
   const manifest=JSON.parse(await readFile(join(import.meta.dirname,'../catalog/manifest.json'),'utf8'));
-  const answers=['1','2','','3','1','', '2','no'];
-  const result=await collectAnswers(async()=>answers.shift(),manifest);
+  const cancel=Symbol('cancel');
+  const results=['codex','backend','acme',['orchestrator','backend-developer'],'none',['github'],['orchestrator-governance'],'shadow',''];
+  const calls=[];
+  const prompts={
+    intro:value=>calls.push(['intro',value]),
+    select:async options=>{calls.push(['select',options]);return results.shift()},
+    multiselect:async options=>{calls.push(['multiselect',options]);return results.shift()},
+    text:async options=>{calls.push(['text',options]);return results.shift()},
+    isCancel:value=>value===cancel,
+    cancel:message=>calls.push(['cancel',message]),
+    log:{info:message=>calls.push(['info',message])},
+  };
+  const result=await collectAnswers(manifest,undefined,prompts,{columns:10});
   assert.equal(result.platform,'codex'); assert.equal(result.suite,'backend');
+  assert.deepEqual(result.agents,['orchestrator','backend-developer']);
+  assert.equal(result.agentPrefix,'acme');
+  assert.ok(result.skills.includes('developer-task-execution'));
   assert.deepEqual(result.mcps,['github','jev']);assert.equal(result.decisionSupport.mode,'shadow');
-  await assert.rejects(collectAnswers(async()=>undefined,manifest),/cancel/i);
+  assert.equal(calls.filter(([kind])=>kind==='intro').length,1);
+  assert.ok(calls.some(([kind,message])=>kind==='info'&&/Space.*Enter/.test(message)));
+  assert.ok(calls.find(([kind])=>kind==='multiselect')[1].options.some(option=>option.label==='acme-orchestrator'));
+  assert.match(calls.find(([kind])=>kind==='text')[1].validate('a/b'),/prefix/i);
+  assert.equal(calls.filter(([kind])=>kind==='multiselect').length,3);
+  assert.ok(renderWelcomeBanner(10).includes('Agents-Cli'));
+  assert.ok(renderWelcomeBanner(10).includes('Matias Jacob'));
+  assert.equal(renderWelcomeBanner(10).split('\n')[0].length,renderWelcomeBanner(10).split('\n').at(-1).length);
+  const canceled={...prompts,select:async()=>cancel};
+  await assert.rejects(collectAnswers(manifest,undefined,canceled),/cancel/i);
 });

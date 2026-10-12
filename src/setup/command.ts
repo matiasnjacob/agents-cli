@@ -29,7 +29,7 @@ export async function setupCommand(root:string,catalogRoot:string,options:{confi
     } else {
       if (!process.stdin.isTTY || options.yes) throw new Error('Setup requires an interactive terminal, or --config <file> with --yes/--dry-run.');
       prompts=terminalPrompts();
-      config=await collectAnswers(prompts.ask,await readCatalog(catalogRoot) as Manifest,await readSetupConfig(root,catalogRoot));
+      config=await collectAnswers(await readCatalog(catalogRoot) as Manifest,await readSetupConfig(root,catalogRoot));
     }
     if (options.dryRun) return await executeSetup(root,catalogRoot,config,true);
     if (!options.yes) {

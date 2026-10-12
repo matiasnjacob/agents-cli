@@ -1,50 +1,90 @@
 import {createInterface} from 'node:readline';
+import { cancel, intro, isCancel, log, multiselect, select, text } from '@clack/prompts';
 import {supportedPlatforms,supportedTrackers} from '../contract.js';
 import {resolveConfig,suites,type Manifest,type SetupConfig} from './config.js';
-export type Ask=(prompt:string)=>Promise<string|undefined>;
-export async function collectAnswers(ask:Ask,manifest:Manifest,previous?:SetupConfig):Promise<SetupConfig> {
-  async function answer(prompt:string):Promise<string> {
-    const value=await ask(prompt);
-    if (value===undefined || ['cancel','exit','q'].includes(value.trim().toLowerCase())) throw new Error('Setup cancelled; no files written.');
-    return value.trim();
+
+type SelectOptions = {message:string;options:{value:string;label?:string;hint?:string}[];initialValue?:string;maxItems?:number};
+type MultiOptions = {message:string;options:{value:string;label?:string;hint?:string}[];initialValues?:string[];required?:boolean;maxItems?:number};
+type TextOptions = {message:string;placeholder?:string;defaultValue?:string;validate?:(value:string)=>string|Error|undefined};
+export interface WizardPrompts {
+  intro:(title?:string)=>void;
+  select:(options:SelectOptions)=>Promise<string|symbol>;
+  multiselect:(options:MultiOptions)=>Promise<string[]|symbol>;
+  text:(options:TextOptions)=>Promise<string|symbol>;
+  isCancel:(value:unknown)=>boolean;
+  cancel:(message?:string)=>void;
+  log:{info:(message:string)=>void};
+}
+
+const defaultPrompts:WizardPrompts={intro,select,multiselect,text,isCancel,cancel,log};
+
+export function renderWelcomeBanner(columns=80):string {
+  const rows=['[]  []  []','Agents-Cli','Matias Jacob'];
+  const width=Math.max(12,Math.min(40,columns-6),...rows.map(row=>row.length));
+  const border=`+${'-'.repeat(width+2)}+`;
+  return [border,...rows.map(row=>`| ${row.padEnd(width)} |`),border].join('\n');
+}
+
+function accepted<T>(value:T|symbol,prompts:WizardPrompts):T {
+  if (prompts.isCancel(value)) {
+    prompts.cancel('Setup cancelled; no files written.');
+    throw new Error('Setup cancelled; no files written.');
   }
-  async function select(label:string,choices:readonly string[],fallback:string):Promise<string> {
-    while (true) {
-      const value=await answer(`${label}\n${choices.map((v,i)=>`  ${i+1}. ${v}`).join('\n')}\nSelection [${fallback}]: `);
-      if (!value) return fallback;
-      const chosen=/^\d+$/.test(value)?choices[Number(value)-1]:value;
-      if (choices.includes(chosen)) return chosen;
-    }
-  }
-  async function multi(label:string,choices:string[],fallback:string[]=[]):Promise<string[]> {
-    while (true) {
-      const value=await answer(`${label}\n${choices.map((v,i)=>`  ${i+1}. ${v}`).join('\n')}\nComma-separated selection [${fallback.join(',')||'none'}]; '-' for none: `);
-      if (!value) return fallback;
-      if (value==='-') return [];
-      const selected=value.split(',').map(v=>v.trim()).map(v=>/^\d+$/.test(v)?choices[Number(v)-1]:v);
-      if (selected.every(v=>choices.includes(v)) && new Set(selected).size===selected.length) return selected;
-    }
-  }
-  const platform=await select('Platform',supportedPlatforms,previous?.platform ?? 'codex');
-  const suite=await select('Agent suite',Object.keys(suites),previous?.suite ?? 'complete');
-  const agents=await multi('Agents (adjust preset)',manifest.agents.map(a=>a.id),previous?.suite===suite?previous.agents:suites[suite as keyof typeof suites]);
-  const tracker=await select('Tracker',supportedTrackers,previous?.tracker ?? 'none');
-  const mcps=await multi('MCPs (authentication is configured separately)',['github','linear','trello'],previous?.mcps.filter(id=>id!=='jev') ?? (tracker==='none'?[]:[tracker]));
-  const required=new Set(agents.flatMap(id=>manifest.agents.find(a=>a.id===id)?.requiredSkills ?? []));
-  const skills=await multi(`Optional skills; required skills are automatic: ${[...required].join(', ')}`,manifest.skills.map(s=>s.id),previous?.skills.filter((s):s is string=>typeof s==='string') ?? []);
-  const mode=await select('JEV decision support (state is sent to TypeSafe when invoked)',['off','shadow','assist'],previous?.decisionSupport.mode ?? 'off');
-  const external=await answer('External skills? Paste a JSON array of {id, repository, revision (full SHA), path}, or Enter/no to skip: ');
+  return value as T;
+}
+
+function labels(values:readonly string[]):{value:string;label:string}[] {
+  return values.map(value=>({value,label:value}));
+}
+
+export async function collectAnswers(manifest:Manifest,previous?:SetupConfig,prompts:WizardPrompts=defaultPrompts,terminalWidth=process.stdout.columns ?? 80):Promise<SetupConfig> {
+  prompts.intro(renderWelcomeBanner(terminalWidth));
+  prompts.log.info('Keyboard: ↑/↓ move; Space toggle multi-select; Enter continue.');
+  const platform=accepted(await prompts.select({message:'Choose an agent platform',options:labels(supportedPlatforms),initialValue:previous?.platform ?? 'codex'}),prompts);
+  const suite=accepted(await prompts.select({message:'Choose an agent suite',options:labels(Object.keys(suites)),initialValue:previous?.suite ?? 'complete'}),prompts) as keyof typeof suites;
+  const prefixValue=accepted(await prompts.text({
+    message:'Project prefix for installed agents (optional)',
+    placeholder:'Leave blank for no prefix',
+    defaultValue:previous?.agentPrefix ?? '',
+    validate:value=>value===''||/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)?undefined:'Prefix must use lowercase letters, numbers, and hyphens.',
+  }),prompts);
+  const agentOptions=manifest.agents.map(agent=>({value:agent.id,label:prefixValue?`${prefixValue}-${agent.id}`:agent.id}));
+  const preset=previous?.suite===suite?previous.agents:suites[suite];
+  const agents=accepted(await prompts.multiselect({message:'Select agents (↑/↓ move, Space toggle, Enter continue)',options:agentOptions,initialValues:preset,required:false,maxItems:10}),prompts);
+  prompts.log.info(`Agents: ${agents.length} selected`);
+  const tracker=accepted(await prompts.select({message:'Choose a project tracker',options:labels(supportedTrackers),initialValue:previous?.tracker ?? 'none'}),prompts);
+  const defaultMcps=previous?.mcps.filter(id=>id!=='jev') ?? (tracker==='none'?[]:[tracker]);
+  const mcps=accepted(await prompts.multiselect({message:'Select MCP integrations (authentication is configured separately)',options:labels(['github','linear','trello']),initialValues:defaultMcps,required:false,maxItems:6}),prompts);
+  prompts.log.info(`MCPs: ${mcps.length} selected`);
+  const required=new Set(agents.flatMap(id=>manifest.agents.find(agent=>agent.id===id)?.requiredSkills ?? []));
+  const previousSkills=previous?.skills.filter((skill):skill is string=>typeof skill==='string') ?? [];
+  const skillOptions=manifest.skills.map(skill=>({value:skill.id,label:skill.id,...(required.has(skill.id)?{hint:'required by selected agent'}:{})}));
+  const skills=accepted(await prompts.multiselect({message:'Select optional skills (required skills stay enabled; ↑/↓ move, Space toggle, Enter continue)',options:skillOptions,initialValues:[...new Set([...required,...previousSkills])],required:false,maxItems:12}),prompts);
+  prompts.log.info(`Skills: ${skills.length} selected`);
+  const mode=accepted(await prompts.select({message:'Choose JEV decision support mode',options:labels(['off','shadow','assist']),initialValue:previous?.decisionSupport.mode ?? 'off'}),prompts);
+  const priorExternal=previous?.skills.filter((skill):skill is Exclude<typeof skill,string>=>typeof skill!=='string') ?? [];
+  const external=accepted(await prompts.text({message:'External skills JSON (Enter to skip)',placeholder:'Optional JSON array of {id, repository, revision, path}',defaultValue:priorExternal.length?JSON.stringify(priorExternal):''}),prompts);
   let externalSkills:unknown[]=[];
-  if (external && external!=='no') {
+  if (external.trim() && external.trim()!=='no') {
     try {externalSkills=JSON.parse(external);} catch {throw new Error('External skills must be a JSON array.');}
     if (!Array.isArray(externalSkills)) throw new Error('External skills must be a JSON array.');
-  } else if (previous) externalSkills=previous.skills.filter(s=>typeof s!=='string');
-  if (mode!=='off' && platform!=='pi') mcps.push('jev');
-  return resolveConfig({schemaVersion:1,platform,suite,agents,tracker,skills:[...skills,...externalSkills],mcps,decisionSupport:{...previous?.decisionSupport,mode}},manifest);
+  }
+  const selectedMcps=[...mcps];
+  if (mode!=='off' && platform!=='pi') selectedMcps.push('jev');
+  const config=resolveConfig({schemaVersion:1,platform,suite,agents,agentPrefix:prefixValue,tracker,skills:[...skills,...externalSkills],mcps:selectedMcps,decisionSupport:{...previous?.decisionSupport,mode}},manifest);
+  return config;
 }
+
+export function isSetupCancelled(error:unknown):boolean {
+  return error instanceof Error && /Setup cancelled/.test(error.message);
+}
+
+export const isPromptCancel=isCancel;
+
+export type Ask=(prompt:string)=>Promise<string|undefined>;
 export function terminalPrompts():{ask:Ask;close:()=>void} {
   const rl=createInterface({input:process.stdin,output:process.stderr,terminal:true});
   const iterator=rl[Symbol.asyncIterator]();
   rl.on('SIGINT',()=>rl.close());
-  return {ask:async(prompt)=>{process.stderr.write(prompt);const result=await iterator.next();return result.done?undefined:result.value;},close:()=>rl.close()};
+  return {ask:async prompt=>{process.stderr.write(prompt);const result=await iterator.next();return result.done?undefined:result.value;},close:()=>rl.close()};
 }
