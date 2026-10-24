@@ -17,6 +17,8 @@ import {suites,resolveConfig,type Manifest} from '../setup/config.js';
 import {mcpCatalog} from '../setup/mcp.js';
 import {createStyle} from '../setup/ui.js';
 import {checkSetup,formatDrift,externalStatuses} from '../setup/lifecycle.js';
+import {uninstall,formatUninstall,revert,formatRevert,listBackups} from '../setup/uninstall.js';
+import {confirm,isCancel} from '@clack/prompts';
 import {decisionCommand} from '../decision/cli.js';
 
 const result = parseCommandArgs(process.argv.slice(2));
@@ -54,6 +56,22 @@ try {
     const report = await runDoctor({ root: process.cwd(), catalogRoot });
     console.log(result.json || !process.stdout.isTTY ? JSON.stringify(report, null, 2) : formatDoctorReport(report, createStyle()));
     if (!report.ok) process.exitCode = 1;
+  } else if (result.kind === "uninstall" || result.kind === "revert") {
+    const root = process.cwd();
+    const human = !result.json && Boolean(process.stdout.isTTY);
+    if (result.kind === "revert" && result.list) {
+      const backups = (await listBackups(root)).map((backup) => ({ id: backup.id, files: backup.files.length }));
+      console.log(human ? (backups.map((backup) => `${backup.id}  ${backup.files} file(s)`).join("\n") || "No backups.") : JSON.stringify(backups, null, 2));
+    } else {
+      if (!result.dryRun && !result.yes) {
+        if (!process.stdin.isTTY) throw new Error(`${result.kind} changes files; use --yes to apply or --dry-run to preview.`);
+        const answer = await confirm({ message: result.kind === "uninstall" ? "Remove the files and MCP entries installed by agents-cli? (edited files are kept; backups are saved)" : "Restore files from the backup? (current contents are backed up first)", initialValue: false });
+        if (isCancel(answer) || !answer) throw new Error(`${result.kind} cancelled; no files changed.`);
+      }
+      const report = result.kind === "uninstall" ? await uninstall(root, { dryRun: result.dryRun }) : await revert(root, { id: result.id, dryRun: result.dryRun });
+      const text = result.kind === "uninstall" ? formatUninstall(report as Awaited<ReturnType<typeof uninstall>>, createStyle()) : formatRevert(report as Awaited<ReturnType<typeof revert>>, createStyle());
+      console.log(human ? text : JSON.stringify(report, null, 2));
+    }
   } else if (result.kind === "check") {
     const drift = await checkSetup(process.cwd(), catalogRoot);
     console.log(result.json || !process.stdout.isTTY ? JSON.stringify(drift, null, 2) : formatDrift(drift, createStyle()));

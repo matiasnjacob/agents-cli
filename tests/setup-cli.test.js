@@ -238,3 +238,38 @@ test('skills update --dry-run reports statuses without touching the config',asyn
   assert.equal(await readFile(join(root,'agents-cli.config.json'),'utf8'),before);
   await assert.rejects(exec(process.execPath,[cli,'skills','update','nope','--dry-run'],{cwd:root}),/No external skill 'nope'/);
 });
+
+test('uninstall removes only managed files and MCP entries, keeps edits and secrets; revert restores',async()=>{
+  const {access,readdir:ls}=await import('node:fs/promises');
+  const root=await mkdtemp(join(tmpdir(),'setup-uninstall-'));
+  await writeFile(join(root,'input.json'),JSON.stringify({...fixture,platform:undefined,platforms:['claude','codex'],mcps:['github','engram'],suite:'review-qa'}));
+  await writeFile(join(root,'.mcp.json'),JSON.stringify({mcpServers:{mine:{url:'https://mine.example'}}}));
+  await writeFile(join(root,'.codex-user-note'),'unrelated');
+  const run=async(args)=>JSON.parse((await exec(process.execPath,[cli,...args],{cwd:root})).stdout);
+  await run(['setup','--config','input.json','--yes']);
+  assert.match(await readFile(join(root,'.mcp.json'),'utf8'),/agents-cli-github/);
+  await writeFile(join(root,'.env'),'GITHUB_TOKEN=secret\n');
+  await writeFile(join(root,'.claude/agents/qa-manual.md'),'my edit');
+  const dry=await run(['uninstall','--dry-run']);
+  assert.equal(dry.dryRun,true); assert.deepEqual(dry.kept,['.claude/agents/qa-manual.md']);
+  await access(join(root,'.claude/agents/code-reviewer.md'));
+  await assert.rejects(exec(process.execPath,[cli,'uninstall'],{cwd:root}),/--yes/);
+  const done=await run(['uninstall','--yes']);
+  assert.ok(done.removed.includes('.claude/agents/code-reviewer.md')); assert.deepEqual(done.kept,['.claude/agents/qa-manual.md']);
+  await assert.rejects(access(join(root,'.claude/agents/code-reviewer.md')));
+  await assert.rejects(access(join(root,'.codex/agents')));
+  await assert.rejects(access(join(root,'.codex/skills')));
+  assert.doesNotMatch(await readFile(join(root,'.codex/config.toml'),'utf8'),/agents-cli/);
+  assert.equal(await readFile(join(root,'.claude/agents/qa-manual.md'),'utf8'),'my edit');
+  const mcp=JSON.parse(await readFile(join(root,'.mcp.json'),'utf8'));
+  assert.deepEqual(Object.keys(mcp.mcpServers),['mine']);
+  assert.equal(await readFile(join(root,'.env'),'utf8'),'GITHUB_TOKEN=secret\n');
+  assert.equal(await readFile(join(root,'.codex-user-note'),'utf8'),'unrelated');
+  const backups=await run(['revert','--list']);
+  assert.ok(backups.length>=1);
+  const preview=await run(['revert','--dry-run']);
+  assert.ok(preview.restored.includes('.claude/agents/code-reviewer.md'));
+  await run(['revert','--yes']);
+  assert.match(await readFile(join(root,'.claude/agents/code-reviewer.md'),'utf8'),/code-reviewer/);
+  await assert.rejects(exec(process.execPath,[cli,'uninstall','--yes'],{cwd:await mkdtemp(join(tmpdir(),'none-'))}),/Nothing to uninstall/);
+});
