@@ -12,7 +12,7 @@ import { applyInstall } from "../install/engine.js";
 import { listSkills, readCatalog, renderSkillFiles } from "../catalog/skills.js";
 import { runDoctor } from "../doctor.js";
 import { readFile } from "node:fs/promises";
-import {setupCommand,executeSetup,readSetupConfig} from '../setup/command.js';
+import {setupCommand,executeSetup,readSetupConfig,isHumanSetup} from '../setup/command.js';
 import {suites,resolveConfig,type Manifest} from '../setup/config.js';
 import {mcpCatalog} from '../setup/mcp.js';
 import {decisionCommand} from '../decision/cli.js';
@@ -36,7 +36,10 @@ try {
     const packageInfo = JSON.parse(await readFile(join(dirname(fileURLToPath(import.meta.url)), "../../package.json"), "utf8")) as { version: string };
     console.log(packageInfo.version);
   }
-  else if (result.kind === 'setup') console.log(JSON.stringify(await setupCommand(process.cwd(),catalogRoot,result),null,2));
+  else if (result.kind === 'setup') {
+    const report = await setupCommand(process.cwd(),catalogRoot,result);
+    if (!isHumanSetup(result)) console.log(JSON.stringify(report,null,2));
+  }
   else if (result.kind === 'decision') await decisionCommand(result);
   else if (result.kind === 'suites-list') console.log(JSON.stringify(suites,null,2));
   else if (result.kind === 'mcp-list') console.log(JSON.stringify(mcpCatalog.map(m=>({...m,supported:m.platforms.includes(result.platform)})),null,2));
@@ -84,7 +87,7 @@ async function detectPlatform(root: string): Promise<{ platform: Platform; skill
 async function addSkill(platform:Platform,skill:string,dryRun:boolean,catalogRoot:string) {
   const configured=await readSetupConfig(process.cwd(),catalogRoot);
   if (configured) {
-    if (configured.platform!==platform) throw new Error('Skill platform differs from configured setup.');
+    if (!configured.platforms.includes(platform)) throw new Error('Skill platform differs from configured setup.');
     const skills=configured.skills.some(s=>typeof s==='string'?s===skill:s.id===skill)?configured.skills:[...configured.skills,skill];
     const config=resolveConfig({...configured,skills},await readCatalog(catalogRoot) as Manifest);
     console.log(JSON.stringify(await executeSetup(process.cwd(),catalogRoot,config,dryRun),null,2));return;

@@ -38,6 +38,11 @@ export async function collectExternalSkill(root:string,source:ExternalSkill,plat
   return {files,provenance:{...source,license,hashes:Object.fromEntries(files.map(f=>[f.path,sha256(f.content)]))}};
 }
 export async function resolveExternalSkill(source:ExternalSkill,platform:Platform) {
+  const local=process.env.AGENTS_CLI_EXTERNAL_SKILLS_DIR;
+  if (local) {
+    try {return await collectExternalSkill(join(local,source.repository),source,platform);}
+    catch {throw new Error(`Could not resolve external skill ${source.id} from AGENTS_CLI_EXTERNAL_SKILLS_DIR.`);}
+  }
   const staging=await mkdtemp(join(tmpdir(),'agents-cli-skill-'));
   try {
     const gitArgs=['-c','core.hooksPath=/dev/null','-c','core.symlinks=true'];

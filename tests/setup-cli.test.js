@@ -37,39 +37,43 @@ test('wizard presents keyboard prompts, preserves preset dependencies, captures 
   const {collectAnswers,renderWelcomeBanner}=await import('../dist/setup/wizard.js');
   const manifest=JSON.parse(await readFile(join(import.meta.dirname,'../catalog/manifest.json'),'utf8'));
   const cancel=Symbol('cancel');
-  const results=['codex','backend','acme',['orchestrator','backend-developer'],'none',['github'],['orchestrator-governance'],'shadow',''];
+  const results=[['codex','claude'],'backend','acme',['orchestrator','backend-developer'],'none',['github'],['orchestrator-governance'],'shadow',''];
+  const [platformsAnswer,suiteAnswer,prefixAnswer,agentsAnswer,trackerAnswer,mcpAnswer,skillAnswer,modeAnswer,externalAnswer]=results;
+  const selects=[suiteAnswer,trackerAnswer,modeAnswer],multis=[platformsAnswer,agentsAnswer,mcpAnswer,skillAnswer];
+  results.splice(0,results.length,prefixAnswer,externalAnswer);
   const calls=[];
   const prompts={
     intro:value=>calls.push(['intro',value]),
-    select:async options=>{calls.push(['select',options]);return results.shift()},
-    multiselect:async options=>{calls.push(['multiselect',options]);return results.shift()},
+    select:async options=>{calls.push(['select',options]);return selects.shift()},
+    multiselect:async options=>{calls.push(['multiselect',options]);return multis.shift()},
     text:async options=>{calls.push(['text',options]);return results.shift()},
     isCancel:value=>value===cancel,
     cancel:message=>calls.push(['cancel',message]),
     log:{info:message=>calls.push(['info',message])},
   };
   const result=await collectAnswers(manifest,undefined,prompts,10);
-  assert.equal(result.platform,'codex'); assert.equal(result.suite,'backend');
+  assert.deepEqual(result.platforms,['codex','claude']); assert.equal(result.suite,'backend');
   assert.deepEqual(result.agents,['orchestrator','backend-developer']);
   assert.equal(result.agentPrefix,'acme');
   assert.ok(result.skills.includes('developer-task-execution'));
   assert.deepEqual(result.mcps,['github','jev']);assert.equal(result.decisionSupport.mode,'shadow');
   assert.equal(calls.filter(([kind])=>kind==='intro').length,1);
   assert.ok(calls.some(([kind,message])=>kind==='info'&&/Space.*Enter/.test(message)));
-  assert.ok(calls.find(([kind])=>kind==='multiselect')[1].options.some(option=>option.label==='acme-orchestrator'));
+  assert.ok(calls.filter(([kind])=>kind==='multiselect')[1][1].options.some(option=>option.label==='acme-orchestrator'));
   assert.equal(calls.find(([kind])=>kind==='text')[1].defaultValue,undefined);
   assert.match(calls.find(([kind])=>kind==='text')[1].validate('a/b'),/prefix/i);
-  assert.equal(calls.filter(([kind])=>kind==='multiselect').length,3);
+  assert.equal(calls.filter(([kind])=>kind==='multiselect').length,4);
+  assert.ok(result.skills.some(skill=>skill.id==='brainstorming'));
   assert.ok(calls.some(([kind,message])=>kind==='info'&&/Required skills:/.test(message)));
   assert.ok(renderWelcomeBanner(10).includes('Agents-Cli'));
   assert.ok(renderWelcomeBanner(10).includes('Matias Jacob'));
   assert.equal(renderWelcomeBanner(10).split('\n')[0].length,renderWelcomeBanner(10).split('\n').at(-1).length);
   assert.doesNotMatch(renderWelcomeBanner(10),/\u001b\[/);
-  const clearResults=['codex','backend','',['backend-developer'],'none',[],[],'off',''];
-  const clearPrompts={...prompts,select:async()=>clearResults.shift(),multiselect:async()=>clearResults.shift(),text:async options=>{const value=clearResults.shift();if(options.message.includes('prefix')) assert.equal(options.initialValue,'acme');return value;}};
-  const previous={platform:'codex',suite:'backend',agents:['backend-developer'],agentPrefix:'acme',tracker:'none',skills:[],mcps:[],decisionSupport:{mode:'off'}};
+  const clearSelects=['backend','none','off'],clearMultis=[['codex'],['backend-developer'],[],[]],clearResults=['',''];
+  const clearPrompts={...prompts,select:async()=>clearSelects.shift(),multiselect:async()=>clearMultis.shift(),text:async options=>{const value=clearResults.shift();if(options.message.includes('prefix')) assert.equal(options.initialValue,'acme');return value;}};
+  const previous={platforms:['codex'],suite:'backend',agents:['backend-developer'],agentPrefix:'acme',tracker:'none',skills:[],mcps:[],decisionSupport:{mode:'off'}};
   assert.equal((await collectAnswers(manifest,previous,clearPrompts,10)).agentPrefix,'');
-  const canceled={...prompts,select:async()=>cancel};
+  const canceled={...prompts,select:async()=>cancel,multiselect:async()=>cancel};
   await assert.rejects(collectAnswers(manifest,undefined,canceled),/cancel/i);
 });
 
@@ -93,7 +97,7 @@ test('setup final confirmation cancellation and non-TTY rejection leave the proj
   const root=await mkdtemp(join(tmpdir(),'setup-cancel-'));
   await writeFile(join(root,'input.json'),JSON.stringify(fixture));
   const events=[];
-  const ui={isInteractive:()=>true,note:message=>events.push(message),confirm:async()=>false,isCancel:()=>false,cancel:message=>events.push(message),spinner:()=>({start(){},stop(){}})};
+  const ui={isInteractive:()=>true,note:message=>events.push(message),confirm:async()=>false,isCancel:()=>false,cancel:message=>events.push(message)};
   await assert.rejects(setupCommand(root,join(import.meta.dirname,'../catalog'),{config:'input.json',yes:false,dryRun:false},ui),/cancelled/i);
   assert.deepEqual((await readdir(root)).sort(),['input.json']);
   assert.ok(events.some(message=>message.includes('CREATE')));
@@ -103,4 +107,24 @@ test('setup final confirmation cancellation and non-TTY rejection leave the proj
   const nonTty={...ui,isInteractive:()=>false};
   await assert.rejects(setupCommand(root,join(import.meta.dirname,'../catalog'),{yes:false,dryRun:false},nonTty),/interactive terminal/i);
   assert.deepEqual((await readdir(root)).sort(),['input.json']);
+});
+
+test('multi-platform setup installs agents, MCP and brainstorming for each platform',async()=>{
+  const {resolveConfig}=await import('../dist/setup/config.js');
+  const {executeSetup}=await import('../dist/setup/command.js');
+  const catalogRoot=join(import.meta.dirname,'../catalog');
+  const manifest=JSON.parse(await readFile(join(catalogRoot,'manifest.json'),'utf8'));
+  const config=resolveConfig({schemaVersion:1,platforms:['codex','claude'],suite:'review-qa',tracker:'none',mcps:['engram'],decisionSupport:{mode:'assist'}},manifest);
+  const root=await mkdtemp(join(tmpdir(),'setup-multi-'));
+  const report=await executeSetup(root,catalogRoot,config,false);
+  assert.deepEqual(report.conflicts,[]);
+  for (const platform of ['codex','claude']) {
+    assert.match(await readFile(join(root,`.${platform}/skills/brainstorming/SKILL.md`),'utf8'),/brainstorming/);
+    assert.match(await readFile(join(root,`.${platform}/skills/engram-session/SKILL.md`),'utf8'),/mem_session_summary/);
+    assert.match(await readFile(join(root,`.${platform}/skills/qa-test-evidence/SKILL.md`),'utf8'),/rank_test_scenarios/);
+  }
+  assert.match(await readFile(join(root,'.mcp.json'),'utf8'),/agents-cli-engram/);
+  assert.match(await readFile(join(root,'.codex/config.toml'),'utf8'),/agents-cli-engram/);
+  assert.deepEqual(JSON.parse(await readFile(join(root,'agents-cli.config.json'),'utf8')).platforms,['codex','claude']);
+  assert.equal(resolveConfig({schemaVersion:1,platform:'pi',suite:'backend',tracker:'none'},manifest).platforms[0],'pi');
 });

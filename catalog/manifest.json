@@ -9,6 +9,7 @@
       "sourceId": "aws-specialist.md",
       "sourceSha256": "f0d728c4ebf286e00a4a13ccbab6f52ceccdc3d91f8f07dcfb296a388c392125",
       "requiredSkills": [
+        "engram-session",
         "worktree-task-isolation"
       ],
       "recommendedSkills": []
@@ -20,6 +21,7 @@
       "sourceSha256": "9a332a57999f5bc5ce72057f174606f248718c562c0aac40d6d1fe531e297079",
       "requiredSkills": [
         "developer-task-execution",
+        "engram-session",
         "git-feature-workflow",
         "worktree-task-isolation"
       ],
@@ -32,6 +34,7 @@
       "sourceSha256": "4c67aaccb75472b3246241fe24baf6d488b6f6ceb6413399bda7e958ed45259e",
       "requiredSkills": [
         "code-review-pr",
+        "engram-session",
         "worktree-task-isolation"
       ],
       "recommendedSkills": []
@@ -43,6 +46,7 @@
       "sourceSha256": "38d60982ddfe13bd4487d616fd55159c5c4759d16bf059a28a701e27a98c2f9a",
       "requiredSkills": [
         "developer-task-execution",
+        "engram-session",
         "git-feature-workflow",
         "worktree-task-isolation"
       ],
@@ -54,6 +58,7 @@
       "sourceId": "orchestrator.md",
       "sourceSha256": "7dea28d8bb6eb2dfc0455d5e028b29a22b380d4f861e0c6aee661fc229501ca7",
       "requiredSkills": [
+        "engram-session",
         "orchestrator-governance",
         "worktree-task-isolation"
       ],
@@ -65,7 +70,9 @@
       "sourceId": "qa-automator.md",
       "sourceSha256": "e1a1f1f68ec31d81f19818ded437414f0f776eccf61299537d910a11e36391ad",
       "requiredSkills": [
+        "engram-session",
         "git-feature-workflow",
+        "qa-test-evidence",
         "worktree-task-isolation"
       ],
       "recommendedSkills": []
@@ -76,7 +83,9 @@
       "sourceId": "qa-manual.md",
       "sourceSha256": "4019e6e6e50042d3887befc59545feef4102d8467e6d5f2f6f8bfbbc70445d4a",
       "requiredSkills": [
-        "functional-review"
+        "engram-session",
+        "functional-review",
+        "qa-test-evidence"
       ],
       "recommendedSkills": []
     }
@@ -117,6 +126,18 @@
       "path": "skills/developer-task-execution",
       "sourceId": "authored.generic.developer-task-execution",
       "sourceSha256": "c45a45a1ddd72e2a9afe524d2d9affa8cf8aeaeed2eba9335eb54deeaebae082"
+    },
+    {
+      "id": "engram-session",
+      "path": "skills/engram-session",
+      "sourceId": "authored.generic.engram-session",
+      "sourceSha256": "4be2f35d7b9c26b2fdce8ac6e8f8ae1475803de8be3cc88c5ed6e1c075a84ea2"
+    },
+    {
+      "id": "qa-test-evidence",
+      "path": "skills/qa-test-evidence",
+      "sourceId": "authored.generic.qa-test-evidence",
+      "sourceSha256": "f88457f1a180d2983a41500e26c7a19474f654e69b34c0ab7a8a658735d7099b"
     }
   ],
   "excluded": {

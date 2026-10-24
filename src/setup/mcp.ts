@@ -3,11 +3,12 @@ import {join} from 'node:path';
 import {parse as parseJson, modify, applyEdits, type ParseError} from 'jsonc-parser';
 import {parse as parseToml} from 'smol-toml';
 import {sha256,assertNoSymlinks,type InstallFile} from '../install/engine.js';
-import type {SetupConfig} from './config.js';
+import type {Platform} from '../contract.js';
 export const mcpCatalog: {id:string;transport:string;platforms:string[];url?:string;credentialEnv?:string;authentication?:string;command?:string;args?:string[];note?:string}[]=[
   {id:'github',transport:'http',url:'https://api.githubcopilot.com/mcp/',credentialEnv:'GITHUB_TOKEN',platforms:['codex','claude','opencode']},
   {id:'linear',transport:'http',url:'https://mcp.linear.app/mcp',authentication:'OAuth',platforms:['codex','claude','opencode']},
   {id:'trello',transport:'pending',platforms:[],note:'No verified portable Trello MCP bundled; configure your chosen provider manually.'},
+  {id:'engram',transport:'stdio',command:'engram',args:['mcp'],platforms:['codex','claude','opencode'],note:'Pi has no native MCP; use the engram CLI from bash.'},
   {id:'jev',transport:'stdio',command:'agents-cli',args:['decision','mcp'],platforms:['codex','claude','opencode'],note:'Pi subagents use agents-cli decision through bash.'},
 ];
 interface State {schemaVersion:1; path:string; entries:Record<string,string>; blockHash?:string}
@@ -15,18 +16,19 @@ async function optional(root:string,path:string):Promise<string|undefined> {
   await assertNoSymlinks(root,path);
   try {return await readFile(join(root,path),'utf8');} catch(e) {if ((e as NodeJS.ErrnoException).code==='ENOENT') return; throw e;}
 }
-export async function prepareMcp(root:string,config:Pick<SetupConfig,'platform'|'mcps'>):Promise<{files:InstallFile[];pending:string[]}> {
+export async function prepareMcp(root:string,config:{platform:Platform;mcps:string[]}):Promise<{files:InstallFile[];pending:string[]}> {
   const files:InstallFile[]=[],pending:string[]=[];
   const entries:Record<string,unknown>={};
   for (const id of config.mcps) {
     const entry=mcpCatalog.find(e=>e.id===id);
     if (!entry) throw new Error('Unknown MCP.');
-    if (!entry.platforms.includes(config.platform)) {pending.push(`${id}: ${config.platform==='pi'&&id==='jev'?'use agents-cli decision CLI from bash':'native connection is not bundled for this platform; configure manually'}.`); continue;}
+    if (!entry.platforms.includes(config.platform)) {pending.push(`${id}: ${config.platform==='pi'&&id==='jev'?'use agents-cli decision CLI from bash':config.platform==='pi'&&id==='engram'?'use the engram CLI from bash':'native connection is not bundled for this platform; configure manually'}.`); continue;}
     const name=`agents-cli-${id}`;
-    if (config.platform==='opencode') entries[name]=id==='jev'?{type:'local',command:['agents-cli','decision','mcp'],enabled:true}:{type:'remote',url:entry.url,enabled:true,...(id==='github'?{oauth:false,headers:{Authorization:'Bearer {env:GITHUB_TOKEN}'}}:{})};
-    else if (config.platform==='claude') entries[name]=id==='jev'?{type:'stdio',command:'agents-cli',args:['decision','mcp']}:{type:'http',url:entry.url,...(id==='github'?{headers:{Authorization:'Bearer ${GITHUB_TOKEN}'}}:{})};
-    else entries[name]=id==='jev'?{command:'agents-cli',args:['decision','mcp']}:{url:entry.url,...(id==='github'?{bearer_token_env_var:'GITHUB_TOKEN'}:{})};
-    pending.push(`${id}: ${id==='github'?'set GITHUB_TOKEN in the runtime environment':id==='linear'?'complete OAuth in the selected runtime':'ensure agents-cli is on PATH and set the configured TypeSafe API key' }; functional tool call NOT VERIFIED.`);
+    const local=entry.transport==='stdio'&&entry.command!==undefined,cmd=[entry.command!,...(entry.args??[])];
+    if (config.platform==='opencode') entries[name]=local?{type:'local',command:cmd,enabled:true}:{type:'remote',url:entry.url,enabled:true,...(id==='github'?{oauth:false,headers:{Authorization:'Bearer {env:GITHUB_TOKEN}'}}:{})};
+    else if (config.platform==='claude') entries[name]=local?{type:'stdio',command:entry.command,args:entry.args}:{type:'http',url:entry.url,...(id==='github'?{headers:{Authorization:'Bearer ${GITHUB_TOKEN}'}}:{})};
+    else entries[name]=local?{command:entry.command,args:entry.args}:{url:entry.url,...(id==='github'?{bearer_token_env_var:'GITHUB_TOKEN'}:{})};
+    pending.push(`${id}: ${id==='github'?'set GITHUB_TOKEN in the runtime environment':id==='linear'?'complete OAuth in the selected runtime':id==='engram'?'ensure the engram binary is on PATH':'ensure agents-cli is on PATH and set the configured TypeSafe API key' }; functional tool call NOT VERIFIED.`);
   }
   if (config.platform==='pi') return {files,pending};
   const statePath=`.agents/mcp-state-${config.platform}.json`;
