@@ -12,10 +12,12 @@ import { applyInstall } from "../install/engine.js";
 import { listSkills, readCatalog, renderSkillFiles } from "../catalog/skills.js";
 import { runDoctor, formatDoctorReport } from "../doctor.js";
 import { readFile, writeFile } from "node:fs/promises";
+import { basename } from "node:path";
 import {setupCommand,executeSetup,readSetupConfig,isHumanSetup} from '../setup/command.js';
 import {suites,resolveConfig,type Manifest} from '../setup/config.js';
 import {mcpCatalog} from '../setup/mcp.js';
 import {createStyle} from '../setup/ui.js';
+import {resolveExternalSkill,resolveRevision} from '../setup/external.js';
 import {checkSetup,formatDrift,externalStatuses} from '../setup/lifecycle.js';
 import {uninstall,formatUninstall,revert,formatRevert,listBackups} from '../setup/uninstall.js';
 import {confirm,isCancel} from '@clack/prompts';
@@ -49,6 +51,7 @@ try {
   else if (result.kind === 'mcp-list') console.log(JSON.stringify(mcpCatalog.map(m=>({...m,supported:m.platforms.includes(result.platform)})),null,2));
   else if (result.kind === "validate") console.log(JSON.stringify(result.config, null, 2));
   else if (result.kind === "skills-list") console.log(JSON.stringify(listSkills(await readCatalog(catalogRoot)), null, 2));
+  else if (result.kind === "skills-add-external") await addExternalSkill(result, catalogRoot);
   else if (result.kind === "skills-update") await updateExternalSkills(result.id, result.dryRun, result.yes, catalogRoot);
   else if (result.kind === "skills-add") await addSkill(result.platform,result.skill,result.dryRun,catalogRoot);
   else if (result.kind === "init") await install(result.config.platform, result.config.tracker, result.config.skills, result.config.dryRun, catalogRoot, true);
@@ -151,12 +154,29 @@ async function renderPlatform(platform: Platform, catalogRoot: string, skills: s
   return renderPi({ catalogRoot, selectedSkills: skills });
 }
 
-async function updateExternalSkills(id: string | undefined, dryRun: boolean, yes: boolean, catalogRoot: string) {
-  const root = process.cwd();
-  const file = join(root, "agents-cli.config.json");
+async function readConfigFile(): Promise<{ file: string; original: string; config: { skills?: unknown[]; platforms?: Platform[] } }> {
+  const file = join(process.cwd(), "agents-cli.config.json");
   let original: string;
-  try { original = await readFile(file, "utf8"); } catch { throw new Error("skills update needs agents-cli.config.json; run setup first."); }
-  const config = JSON.parse(original) as { skills?: unknown[] };
+  try { original = await readFile(file, "utf8"); } catch { throw new Error("This command needs agents-cli.config.json; run setup first."); }
+  return { file, original, config: JSON.parse(original) };
+}
+
+/** Writes an edited config, applies it through the normal setup plan, and restores the original on cancel or conflicts. */
+async function applyConfigEdit(file: string, original: string, config: unknown, yes: boolean, catalogRoot: string) {
+  await writeFile(file, JSON.stringify(config, null, 2) + "\n", "utf8");
+  const options = { config: "agents-cli.config.json", yes, dryRun: false };
+  try {
+    const report = await setupCommand(process.cwd(), catalogRoot, options);
+    if ((report as { conflicts?: string[] }).conflicts?.length) await writeFile(file, original, "utf8");
+    return { report, human: isHumanSetup(options) };
+  } catch (error) {
+    await writeFile(file, original, "utf8");
+    throw error;
+  }
+}
+
+async function updateExternalSkills(id: string | undefined, dryRun: boolean, yes: boolean, catalogRoot: string) {
+  const { file, original, config } = await readConfigFile();
   const statuses = (await externalStatuses(config.skills ?? [], undefined, id));
   if (id && !statuses.length) throw new Error(`No external skill '${id}' in agents-cli.config.json.`);
   const outdated = statuses.filter((status) => status.status === "outdated");
@@ -168,14 +188,25 @@ async function updateExternalSkills(id: string | undefined, dryRun: boolean, yes
     const match = outdated.find((status) => typeof skill !== "string" && (skill as { id: string }).id === status.id);
     if (match) (skill as { revision: string }).revision = match.latest!;
   }
-  await writeFile(file, JSON.stringify(config, null, 2) + "\n", "utf8");
-  const options = { config: "agents-cli.config.json", yes, dryRun: false };
-  try {
-    const report = await setupCommand(root, catalogRoot, options);
-    if ((report as { conflicts?: string[] }).conflicts?.length) await writeFile(file, original, "utf8");
-    if (!isHumanSetup(options)) console.log(JSON.stringify({ updated: true, externalSkills: outdated, report }, null, 2));
-  } catch (error) {
-    await writeFile(file, original, "utf8");
-    throw error;
+  const { report, human } = await applyConfigEdit(file, original, config, yes, catalogRoot);
+  if (!human) console.log(JSON.stringify({ updated: true, externalSkills: outdated, report }, null, 2));
+}
+
+async function addExternalSkill(request: { repository: string; path: string; ref?: string; id?: string; dryRun: boolean; yes: boolean }, catalogRoot: string) {
+  const { file, original, config } = await readConfigFile();
+  const id = (request.id ?? basename(request.path)).toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
+  const revision = await resolveRevision(request.repository, request.ref);
+  const source = { id, repository: request.repository, revision, path: request.path };
+  const platform = config.platforms?.[0] ?? "codex";
+  const staged = await resolveExternalSkill(source, platform);
+  const summary = { id, repository: request.repository, revision, path: request.path, files: staged.files.length, license: staged.provenance.license.trim().split("\n")[0] };
+  const review = `https://github.com/${request.repository}/tree/${revision}/${request.path}`;
+  if (request.dryRun) {
+    console.log(JSON.stringify({ dryRun: true, added: false, skill: summary, review }, null, 2));
+    return;
   }
+  config.skills = [...(config.skills ?? []), source];
+  const { report, human } = await applyConfigEdit(file, original, config, request.yes, catalogRoot);
+  if (human) console.log(`Added ${id} (${summary.files} files, ${summary.license}). Skills are executable instructions: review ${review}`);
+  else console.log(JSON.stringify({ dryRun: false, added: true, skill: summary, review, report }, null, 2));
 }

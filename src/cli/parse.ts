@@ -21,6 +21,7 @@ export type CommandResult =
   | { kind: "skills-list"; platform: Platform }
   | { kind: "skills-add"; platform: Platform; skill: string; dryRun: boolean }
   | { kind: "skills-update"; id?: string; dryRun: boolean; yes: boolean }
+  | { kind: "skills-add-external"; repository: string; path: string; ref?: string; id?: string; dryRun: boolean; yes: boolean }
   | { kind: "doctor"; json?: boolean }
   | { kind: "update"; dryRun: boolean; yes: boolean }
   | { kind: "check"; json: boolean }
@@ -48,6 +49,7 @@ export function usage(): string {
     "  agents-cli uninstall [--dry-run] [--yes] [--json]",
     "  agents-cli revert [timestamp] [--list] [--dry-run] [--yes] [--json]",
     "  agents-cli skills update [id] [--dry-run] [--yes]",
+    "  agents-cli skills add <owner/repo> --path <dir> [--ref <sha|branch|tag>] [--id <id>] [--dry-run] [--yes]",
     "  agents-cli update --dry-run",
     "",
     "Commands:",
@@ -130,6 +132,20 @@ export function parseCommandArgs(args: string[]): CommandResult {
   if (command === "skills" && args[1] === "add") {
     const skill = args[2];
     if (!skill || skill.startsWith("--")) return { kind: "error", message: "skills add requires a skill id." };
+    if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(skill)) {
+      const known = ["--path", "--ref", "--id", "--dry-run", "--yes"];
+      for (let i = 3; i < args.length; i++) {
+        if (!known.includes(args[i])) return { kind: "error", message: `Unknown option '${args[i]}'.` };
+        if (!["--dry-run", "--yes"].includes(args[i])) {
+          if (!args[i + 1] || args[i + 1].startsWith("--")) return { kind: "error", message: `${args[i]} requires a value.` };
+          i++;
+        }
+      }
+      const path = option(args, "--path");
+      if (!path) return { kind: "error", message: "skills add owner/repo requires --path <directory containing SKILL.md>." };
+      const ref = option(args, "--ref"), id = option(args, "--id");
+      return { kind: "skills-add-external", repository: skill, path, ...(ref ? { ref } : {}), ...(id ? { id } : {}), dryRun: args.includes("--dry-run"), yes: args.includes("--yes") };
+    }
     const platform = validPlatform(option(args, "--platform"));
     if (typeof platform !== "string") return platform;
     return { kind: "skills-add", platform, skill, dryRun: args.includes("--dry-run") };

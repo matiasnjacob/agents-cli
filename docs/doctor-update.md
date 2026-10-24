@@ -38,3 +38,7 @@ operation.
 `agents-cli uninstall` removes what agents-cli installed: files whose hash still matches `.agents-cli.lock.json`, and the MCP entries it owns inside `.mcp.json`, `opencode.json(c)` or `.codex/config.toml` (your own entries and the file itself stay). Files you edited are kept and listed. `.env`, `.envrc` and `.gitignore` are never touched. Removed files are saved in `.agents-cli-backups/<timestamp>/`. It needs `--yes` (or an interactive confirmation); `--dry-run` previews.
 
 `agents-cli revert [timestamp]` restores the files of a backup (the latest by default; `--list` shows them). The current contents are backed up first, so a revert can itself be reverted.
+
+## Skills from any repository
+
+`agents-cli skills add owner/repo --path <dir> [--ref <sha|branch|tag>] [--id <id>] [--dry-run] [--yes]` adds a skill from a GitHub repository to the configured setup. The ref (default: the repository's default branch) is resolved to a full commit SHA and pinned in `agents-cli.config.json`. The skill is staged first with the same checks as other external skills: it needs a license file and text-only resources, and symlinks, `.git` content and oversized skills are rejected. `--dry-run` prints the resolved commit, file count, license and a GitHub link to review the content; skills are executable instructions, so review them before applying. The id defaults to the directory name and cannot clash with catalog skills. If you cancel or the plan has conflicts, the config is restored. Catalog skills still use `skills add <id> --platform <p>`.

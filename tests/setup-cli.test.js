@@ -273,3 +273,35 @@ test('uninstall removes only managed files and MCP entries, keeps edits and secr
   assert.match(await readFile(join(root,'.claude/agents/code-reviewer.md'),'utf8'),/code-reviewer/);
   await assert.rejects(exec(process.execPath,[cli,'uninstall','--yes'],{cwd:await mkdtemp(join(tmpdir(),'none-'))}),/Nothing to uninstall/);
 });
+
+test('skills add owner/repo pins a resolved commit, validates the skill and applies it',async()=>{
+  const {cp,mkdir}=await import('node:fs/promises');
+  const upstream=await mkdtemp(join(tmpdir(),'upstream-'));
+  await cp(join(import.meta.dirname,'fixtures/external'),upstream,{recursive:true});
+  const repo=join(upstream,'acme/tools');
+  await mkdir(join(repo,'skills/hello'),{recursive:true});
+  await writeFile(join(repo,'LICENSE'),'MIT License\nPermission is hereby granted');
+  await writeFile(join(repo,'skills/hello/SKILL.md'),'---\nname: hello\ndescription: "Say hello"\n---\nHello.');
+  const git=(...args)=>exec('git',['-C',repo,...args]);
+  await git('init','-q'); await git('-c','user.email=t@t','-c','user.name=t','add','-A'); await git('-c','user.email=t@t','-c','user.name=t','commit','-q','-m','init'); await git('tag','v1');
+  const sha=(await git('rev-parse','HEAD')).stdout.trim();
+  const root=await mkdtemp(join(tmpdir(),'skills-add-'));
+  const env={...process.env,AGENTS_CLI_EXTERNAL_SKILLS_DIR:upstream};
+  const run=async(args)=>JSON.parse((await exec(process.execPath,[cli,...args],{cwd:root,env})).stdout);
+  await writeFile(join(root,'input.json'),JSON.stringify(fixture));
+  await run(['setup','--config','input.json','--yes']);
+  const before=await readFile(join(root,'agents-cli.config.json'),'utf8');
+  const dry=await run(['skills','add','acme/tools','--path','skills/hello','--ref','v1','--dry-run']);
+  assert.equal(dry.added,false); assert.equal(dry.skill.revision,sha); assert.equal(dry.skill.id,'hello'); assert.match(dry.review,new RegExp(sha));
+  assert.equal(await readFile(join(root,'agents-cli.config.json'),'utf8'),before);
+  const added=await run(['skills','add','acme/tools','--path','skills/hello','--yes']);
+  assert.equal(added.added,true);
+  assert.deepEqual(JSON.parse(await readFile(join(root,'agents-cli.config.json'),'utf8')).skills.find(s=>s.id==='hello'),{id:'hello',repository:'acme/tools',revision:sha,path:'skills/hello'});
+  assert.match(await readFile(join(root,'.claude/skills/hello/SKILL.md'),'utf8'),/Hello\./);
+  assert.equal((await run(['check'])).upToDate,true);
+  const afterAdd=await readFile(join(root,'agents-cli.config.json'),'utf8');
+  await assert.rejects(exec(process.execPath,[cli,'skills','add','acme/tools','--path','skills/hello','--id','functional-review','--yes'],{cwd:root,env}));
+  assert.equal(await readFile(join(root,'agents-cli.config.json'),'utf8'),afterAdd);
+  await assert.rejects(exec(process.execPath,[cli,'skills','add','acme/tools','--path','skills/missing','--yes'],{cwd:root,env}),/Could not resolve external skill/);
+  await assert.rejects(exec(process.execPath,[cli,'skills','add','acme/tools','--path','skills/hello','--ref','nope','--dry-run'],{cwd:root,env}),/Could not resolve/);
+});

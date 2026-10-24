@@ -5,6 +5,10 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
+## Unreleased
+
+- Add `agents-cli skills add owner/repo --path <dir> [--ref] [--id] [--dry-run] [--yes]` to pin and install a skill from any GitHub repository with the existing license and resource checks.
+
 ## 0.6.0 — prepared for release
 
 - Add `agents-cli uninstall` (removes managed files and owned MCP entries, keeps edited files, never touches `.env`/`.envrc`/`.gitignore`) and `agents-cli revert [timestamp] [--list]` to restore from backups.
