@@ -10,11 +10,12 @@ import { renderPi } from "../adapters/pi/render.js";
 import type { Platform } from "../contract.js";
 import { applyInstall } from "../install/engine.js";
 import { listSkills, readCatalog, renderSkillFiles } from "../catalog/skills.js";
-import { runDoctor } from "../doctor.js";
+import { runDoctor, formatDoctorReport } from "../doctor.js";
 import { readFile } from "node:fs/promises";
 import {setupCommand,executeSetup,readSetupConfig,isHumanSetup} from '../setup/command.js';
 import {suites,resolveConfig,type Manifest} from '../setup/config.js';
 import {mcpCatalog} from '../setup/mcp.js';
+import {createStyle} from '../setup/ui.js';
 import {decisionCommand} from '../decision/cli.js';
 
 const result = parseCommandArgs(process.argv.slice(2));
@@ -49,7 +50,7 @@ try {
   else if (result.kind === "init") await install(result.config.platform, result.config.tracker, result.config.skills, result.config.dryRun, catalogRoot, true);
   else if (result.kind === "doctor") {
     const report = await runDoctor({ root: process.cwd(), catalogRoot });
-    console.log(JSON.stringify(report, null, 2));
+    console.log(result.json || !process.stdout.isTTY ? JSON.stringify(report, null, 2) : formatDoctorReport(report, createStyle()));
     if (!report.ok) process.exitCode = 1;
   } else if (result.kind === "update") await update(catalogRoot);
 } catch (error) {
