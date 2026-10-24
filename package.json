@@ -1,6 +1,6 @@
 {
   "name": "@matiasnjacob/agents-cli",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Initialize projects with portable agent definitions and skills.",
   "repository": {
     "type": "git",
@@ -31,7 +31,6 @@
   },
   "dependencies": {
     "@clack/prompts": "0.11.0",
-    "@matiasnjacob/agents-cli": "^0.5.0",
     "jsonc-parser": "3.3.1",
     "smol-toml": "1.9.0"
   }
