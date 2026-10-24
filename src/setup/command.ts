@@ -64,6 +64,24 @@ export async function setupCommand(root:string,catalogRoot:string,options:{confi
   }
 }
 
+export function formatSelectionSummary(report:Parameters<typeof formatSetupPreview>[0],style=createStyle(false)):string {
+  const full=formatSetupPreview(report).split('\n');
+  const selection=full.slice(0,full.findIndex(line=>line.startsWith('CREATE (')));
+  const lines=[style.heading('Setup plan'),...selection.map(line=>{
+    const i=line.indexOf(':');
+    return `  ${style.dim('│')} ${style.command(line.slice(0,i+1))}${line.slice(i+1)}`;
+  })];
+  const counts=`${report.creates.length} to create, ${report.updates.length} to update, ${report.removes.length} to remove, ${report.unchanged?.length ?? 0} unchanged`;
+  lines.push(`  ${style.dim('│')} ${style.command('Files:')} ${counts}`);
+  for (const [label,paths] of [['UPDATE',report.updates],['REMOVE',report.removes],['CONFLICT',report.conflicts]] as const) {
+    if (!paths.length) continue;
+    lines.push(style[label==='CONFLICT'?'fail':'warn'](`${label} (${paths.length})`));
+    lines.push(...paths.slice(0,20).map(path=>`      ${path}`));
+    if (paths.length>20) lines.push(`      ... and ${paths.length-20} more`);
+  }
+  return lines.join('\n');
+}
+
 function colorizePlan(text:string,enabled:boolean):string {
   const styles={CREATE:'green',UPDATE:'yellow',REMOVE:'red',CONFLICT:'red'} as const;
   return text.split('\n').map(line=>{
@@ -93,7 +111,8 @@ async function runSetupCommand(root:string,catalogRoot:string,options:{config?:s
     write(style.heading('Preparing setup plan...'));
     prepared=await prepareSetup(root,catalogRoot,config,message=>write(style.step(message)));
     const preview=await executeSetup(root,catalogRoot,config,true,undefined,prepared);
-    ui.note(colorizePlan(formatSetupPreview(preview),color),'Setup plan');
+    if (ui.write) write(formatSelectionSummary(preview,style));
+    else ui.note(colorizePlan(formatSetupPreview(preview),color),'Setup plan');
     if (preview.conflicts.length) {
       write(style.fail(`${preview.conflicts.length} conflict(s) found; nothing was written.`));
       return preview;

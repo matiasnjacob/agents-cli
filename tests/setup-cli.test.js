@@ -128,3 +128,17 @@ test('multi-platform setup installs agents, MCP and brainstorming for each platf
   assert.deepEqual(JSON.parse(await readFile(join(root,'agents-cli.config.json'),'utf8')).platforms,['codex','claude']);
   assert.equal(resolveConfig({schemaVersion:1,platform:'pi',suite:'backend',tracker:'none'},manifest).platforms[0],'pi');
 });
+
+test('interactive plan shows the selection and file counts, not every file',async()=>{
+  const {setupCommand}=await import('../dist/setup/command.js');
+  const root=await mkdtemp(join(tmpdir(),'setup-summary-'));
+  await writeFile(join(root,'input.json'),JSON.stringify(fixture));
+  const out=[];
+  const ui={isInteractive:()=>true,note:()=>assert.fail('note must not render the plan'),confirm:async()=>false,isCancel:()=>false,cancel(){},write:text=>out.push(text)};
+  await assert.rejects(setupCommand(root,join(import.meta.dirname,'../catalog'),{config:'input.json',yes:false,dryRun:false},ui),/cancelled/i);
+  const text=out.join('\n');
+  assert.match(text,/Platforms: claude/);
+  assert.match(text,/Skills: .*brainstorming/);
+  assert.match(text,/Files: \d+ to create/);
+  assert.doesNotMatch(text,/CREATE \.claude/);
+});
