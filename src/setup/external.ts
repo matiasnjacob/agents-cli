@@ -66,3 +66,23 @@ export const latestRevision:LatestRevision=async repository=>{
     return /^[a-f0-9]{40}$/.test(sha)?sha:undefined;
   } catch {return;}
 };
+
+/** Resolves a branch, tag, SHA or the default branch (no ref) to a full commit SHA. */
+export async function resolveRevision(repository:string,ref?:string):Promise<string> {
+  if (ref && /^[a-f0-9]{40}$/.test(ref)) return ref;
+  if (ref && !/^[A-Za-z0-9._\/-]+$/.test(ref)) throw new Error('Invalid git ref.');
+  const local=process.env.AGENTS_CLI_EXTERNAL_SKILLS_DIR;
+  const opts={timeout:15000,env:{...process.env,GIT_TERMINAL_PROMPT:'0'}};
+  try {
+    if (local) {
+      const {stdout}=await exec('git',['-C',join(local,repository),'rev-parse','--verify',`${ref ?? 'HEAD'}^{commit}`],opts);
+      return stdout.trim();
+    }
+    const patterns=ref?[`refs/heads/${ref}`,`refs/tags/${ref}^{}`,`refs/tags/${ref}`]:['HEAD'];
+    const {stdout}=await exec('git',['ls-remote','--',`https://github.com/${repository}.git`,...patterns],opts);
+    const rows=stdout.trim().split('\n').filter(Boolean).map(line=>line.split(/\s+/));
+    const peeled=rows.find(([,name])=>name?.endsWith('^{}')) ?? rows[0];
+    if (peeled && /^[a-f0-9]{40}$/.test(peeled[0])) return peeled[0];
+  } catch { /* reported below */ }
+  throw new Error(`Could not resolve ${repository}${ref?`@${ref}`:''} to a commit; check the repository and ref, or pass a full commit SHA.`);
+}
