@@ -5,6 +5,10 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
+## 0.5.1 — prepared for release
+
+- Interactive setup plan now shows the selected platforms, agents, tracker, MCPs, skills and JEV mode with file counts instead of listing every file.
+
 ## 0.5.0 — prepared for release
 
 - Add `engram-session` skill: every agent syncs its Engram session before work and saves it before reporting; `engram` MCP option.
