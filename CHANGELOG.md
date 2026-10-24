@@ -9,6 +9,10 @@ and releases use semantic versioning.
 
 - Remove an accidental self-dependency (`@matiasnjacob/agents-cli`) that 0.5.1 declared in its own package.json.
 
+## Unreleased
+
+- Add `agents-cli check [--json]` (read-only drift report, exit 1 on drift) and make `agents-cli update` apply the configured setup (`--yes`, `--dry-run`); edited files stay conflicts.
+
 ## 0.5.3 — prepared for release
 
 - Setup creates `.env` (empty placeholders for GITHUB_TOKEN and the JEV API key as needed), `.envrc` for direnv and a `.gitignore` entry; offers `brew install direnv`.

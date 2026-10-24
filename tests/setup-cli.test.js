@@ -171,3 +171,29 @@ test('setup writes .env placeholders, .envrc and .gitignore without exposing or 
   assert.doesNotMatch(JSON.stringify(report),/secret-value/);
   assert.match(formatDoctorReport(report),/Use `agents-cli doctor --json`/);
 });
+
+test('check reports drift with exit 1 and update restores it',async()=>{
+  const {unlink}=await import('node:fs/promises');
+  const root=await mkdtemp(join(tmpdir(),'setup-lifecycle-'));
+  await writeFile(join(root,'input.json'),JSON.stringify(fixture));
+  const run=(args)=>exec(process.execPath,[cli,...args],{cwd:root}).then(r=>({code:0,out:JSON.parse(r.stdout)}),e=>({code:e.code,out:JSON.parse(e.stdout||'null'),err:e.stderr}));
+  await run(['setup','--config','input.json','--yes']);
+  const clean=await run(['check']);
+  assert.equal(clean.code,0); assert.equal(clean.out.upToDate,true);
+  await unlink(join(root,'.claude/skills/engram-session/SKILL.md'));
+  await writeFile(join(root,'.claude/skills/functional-review/SKILL.md'),'edited by user');
+  const drift=await run(['check']);
+  assert.equal(drift.code,1); assert.equal(drift.out.upToDate,false);
+  assert.ok(drift.out.creates.includes('.claude/skills/engram-session/SKILL.md'));
+  assert.deepEqual(drift.out.conflicts,['.claude/skills/functional-review/SKILL.md']);
+  const blocked=await run(['update','--yes']);
+  assert.deepEqual(blocked.out.conflicts,['.claude/skills/functional-review/SKILL.md']);
+  await assert.rejects(readFile(join(root,'.claude/skills/engram-session/SKILL.md'),'utf8'),/ENOENT/);
+  assert.equal(await readFile(join(root,'.claude/skills/functional-review/SKILL.md'),'utf8'),'edited by user');
+  await unlink(join(root,'.claude/skills/functional-review/SKILL.md'));
+  const updated=await run(['update','--yes']);
+  assert.equal(updated.out.dryRun,false);
+  assert.match(await readFile(join(root,'.claude/skills/engram-session/SKILL.md'),'utf8'),/mem_session_summary/);
+  const noConfig=await mkdtemp(join(tmpdir(),'setup-lifecycle-none-'));
+  await assert.rejects(exec(process.execPath,[cli,'update','--yes'],{cwd:noConfig}),/agents-cli.config.json/);
+});

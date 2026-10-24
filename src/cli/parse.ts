@@ -21,7 +21,8 @@ export type CommandResult =
   | { kind: "skills-list"; platform: Platform }
   | { kind: "skills-add"; platform: Platform; skill: string; dryRun: boolean }
   | { kind: "doctor"; json?: boolean }
-  | { kind: "update"; dryRun: boolean };
+  | { kind: "update"; dryRun: boolean; yes: boolean }
+  | { kind: "check"; json: boolean };
 
 export function usage(): string {
   return [
@@ -39,6 +40,8 @@ export function usage(): string {
     "  agents-cli skills list --platform <codex|opencode|claude|pi>",
     "  agents-cli skills add <id> --platform <codex|opencode|claude|pi> [--dry-run]",
     "  agents-cli doctor [--json]",
+    "  agents-cli update [--dry-run] [--yes]",
+    "  agents-cli check [--json]",
     "  agents-cli update --dry-run",
     "",
     "Commands:",
@@ -47,7 +50,8 @@ export function usage(): string {
     "  init      Install agents and selected skills into the current project.",
     "  skills    List or install selected skills.",
     "  doctor    Diagnose local configuration without exposing secrets.",
-    "  update    Preview safe catalog updates and local conflicts.",
+    "  update    Apply the configured setup again, or preview it with --dry-run.",
+    "  check     Report drift between installed files and the catalog (exit 1 on drift).",
     "",
     "Options:",
     "  --version           Show the installed version.",
@@ -120,8 +124,14 @@ export function parseCommandArgs(args: string[]): CommandResult {
     return args.includes("--json") ? { kind: "doctor", json: true } : { kind: "doctor" };
   }
   if (command === "update") {
-    if (!args.includes("--dry-run")) return { kind: "error", message: "update currently requires --dry-run; applying updates is not implemented." };
-    return { kind: "update", dryRun: true };
+    const extra = args.slice(1).filter((arg) => arg !== "--dry-run" && arg !== "--yes");
+    if (extra.length) return { kind: "error", message: `Unknown option '${extra[0]}'.` };
+    return { kind: "update", dryRun: args.includes("--dry-run"), yes: args.includes("--yes") };
+  }
+  if (command === "check") {
+    const extra = args.slice(1).filter((arg) => arg !== "--json");
+    if (extra.length) return { kind: "error", message: `Unknown option '${extra[0]}'.` };
+    return { kind: "check", json: args.includes("--json") };
   }
   return { kind: "error", message: `Unknown command '${command}'.` };
 }

@@ -20,3 +20,9 @@ If a managed file was edited after installation, its hash no longer matches
 the lockfile and the update is reported as a conflict. Preserve the edit,
 review the catalog diff, and resolve it explicitly before any future apply
 operation.
+
+## update and check
+
+`agents-cli check` is read-only. It compares the installed files with what the current catalog would render for `agents-cli.config.json` and reports files to create, update or remove, locally edited files (conflicts) and missing `.env` variables. It exits 1 on any drift and prints JSON with `--json` or when piped, so it fits CI.
+
+`agents-cli update` applies the configured setup again with the same plan and confirmation as `setup`; `--yes` skips the prompt and prints JSON, and `--dry-run` keeps the previous preview behavior. Edited files are never overwritten: they are reported as conflicts and nothing is written until they are resolved. If everything is current, `update` says so and does nothing.
