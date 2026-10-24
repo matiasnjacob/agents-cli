@@ -5,7 +5,7 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
-## Unreleased
+## 0.5.0 — prepared for release
 
 - Add `engram-session` skill: every agent syncs its Engram session before work and saves it before reporting; `engram` MCP option.
 - Add `qa-test-evidence` skill: QA agents generate test cases with JEV and record Playwright evidence.
