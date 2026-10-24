@@ -5,12 +5,9 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
-## 0.5.2 — prepared for release
+## 0.6.0 — prepared for release
 
-- Remove an accidental self-dependency (`@matiasnjacob/agents-cli`) that 0.5.1 declared in its own package.json.
-
-## Unreleased
-
+- Add `agents-cli uninstall` (removes managed files and owned MCP entries, keeps edited files, never touches `.env`/`.envrc`/`.gitignore`) and `agents-cli revert [timestamp] [--list]` to restore from backups.
 - `check` reports pinned external skills that are behind upstream (informational, offline-safe); add `agents-cli skills update [id] [--dry-run] [--yes]` to move the pin through the normal setup plan.
 - Add `agents-cli check [--json]` (read-only drift report, exit 1 on drift) and make `agents-cli update` apply the configured setup (`--yes`, `--dry-run`); edited files stay conflicts.
 - Interactive setup ends with `Setup complete.` and a short "Before you start" checklist; doctor warnings are no longer printed during setup (only real failures). `agents-cli doctor` still reports everything.
@@ -19,6 +16,10 @@ and releases use semantic versioning.
 
 - Setup creates `.env` (empty placeholders for GITHUB_TOKEN and the JEV API key as needed), `.envrc` for direnv and a `.gitignore` entry; offers `brew install direnv`.
 - `doctor` prints a readable report in a terminal (`--json` or piping keeps JSON) and checks the environment variables and direnv.
+
+## 0.5.2 — prepared for release
+
+- Remove an accidental self-dependency (`@matiasnjacob/agents-cli`) that 0.5.1 declared in its own package.json.
 
 ## 0.5.1 — prepared for release
 

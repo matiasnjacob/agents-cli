@@ -32,3 +32,9 @@ operation.
 `check` also compares each pinned external skill (such as `brainstorming`) with the upstream default-branch commit using `git ls-remote`. A newer upstream revision is reported with a GitHub compare link but is informational: it does not change the exit code. If the network is unavailable the skill is reported as "not verified", never as an error.
 
 `agents-cli skills update [id]` moves the pin in `agents-cli.config.json` to the upstream commit and applies it through the normal setup plan and confirmation (`--yes` skips the prompt, `--dry-run` only reports). If the user cancels or the plan has conflicts, the config file is restored.
+
+## uninstall and revert
+
+`agents-cli uninstall` removes what agents-cli installed: files whose hash still matches `.agents-cli.lock.json`, and the MCP entries it owns inside `.mcp.json`, `opencode.json(c)` or `.codex/config.toml` (your own entries and the file itself stay). Files you edited are kept and listed. `.env`, `.envrc` and `.gitignore` are never touched. Removed files are saved in `.agents-cli-backups/<timestamp>/`. It needs `--yes` (or an interactive confirmation); `--dry-run` previews.
+
+`agents-cli revert [timestamp]` restores the files of a backup (the latest by default; `--list` shows them). The current contents are backed up first, so a revert can itself be reverted.

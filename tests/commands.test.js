@@ -37,6 +37,10 @@ test("parses doctor and only allows safe update preview", () => {
   assert.deepEqual(parseCommandArgs(["update", "--yes"]), { kind: "update", dryRun: false, yes: true });
   assert.deepEqual(parseCommandArgs(["check", "--json"]), { kind: "check", json: true });
   assert.equal(parseCommandArgs(["check", "--x"]).kind, "error");
+  assert.deepEqual(parseCommandArgs(["uninstall", "--yes"]), { kind: "uninstall", dryRun: false, yes: true, json: false });
+  assert.equal(parseCommandArgs(["uninstall", "extra"]).kind, "error");
+  assert.deepEqual(parseCommandArgs(["revert", "2026-10-24", "--dry-run"]), { kind: "revert", id: "2026-10-24", list: false, dryRun: true, yes: false, json: false });
+  assert.equal(parseCommandArgs(["revert", "a", "b"]).kind, "error");
   assert.deepEqual(parseCommandArgs(["update"]), { kind: "update", dryRun: false, yes: false });
   assert.deepEqual(parseCommandArgs(["skills", "update"]), { kind: "skills-update", dryRun: false, yes: false });
   assert.deepEqual(parseCommandArgs(["skills", "update", "brainstorming", "--dry-run"]), { kind: "skills-update", id: "brainstorming", dryRun: true, yes: false });
