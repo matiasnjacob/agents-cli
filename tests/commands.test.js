@@ -33,6 +33,9 @@ test("parses doctor and only allows safe update preview", () => {
   assert.deepEqual(parseCommandArgs(["doctor"]), { kind: "doctor" });
   assert.deepEqual(parseCommandArgs(["doctor", "--json"]), { kind: "doctor", json: true });
   assert.equal(parseCommandArgs(["doctor", "--bad"]).kind, "error");
-  assert.deepEqual(parseCommandArgs(["update", "--dry-run"]), { kind: "update", dryRun: true });
-  assert.match(parseCommandArgs(["update"]).message, /requires --dry-run/);
+  assert.deepEqual(parseCommandArgs(["update", "--dry-run"]), { kind: "update", dryRun: true, yes: false });
+  assert.deepEqual(parseCommandArgs(["update", "--yes"]), { kind: "update", dryRun: false, yes: true });
+  assert.deepEqual(parseCommandArgs(["check", "--json"]), { kind: "check", json: true });
+  assert.equal(parseCommandArgs(["check", "--x"]).kind, "error");
+  assert.deepEqual(parseCommandArgs(["update"]), { kind: "update", dryRun: false, yes: false });
 });

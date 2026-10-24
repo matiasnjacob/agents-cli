@@ -16,6 +16,7 @@ import {setupCommand,executeSetup,readSetupConfig,isHumanSetup} from '../setup/c
 import {suites,resolveConfig,type Manifest} from '../setup/config.js';
 import {mcpCatalog} from '../setup/mcp.js';
 import {createStyle} from '../setup/ui.js';
+import {checkSetup,formatDrift} from '../setup/lifecycle.js';
 import {decisionCommand} from '../decision/cli.js';
 
 const result = parseCommandArgs(process.argv.slice(2));
@@ -52,7 +53,24 @@ try {
     const report = await runDoctor({ root: process.cwd(), catalogRoot });
     console.log(result.json || !process.stdout.isTTY ? JSON.stringify(report, null, 2) : formatDoctorReport(report, createStyle()));
     if (!report.ok) process.exitCode = 1;
-  } else if (result.kind === "update") await update(catalogRoot);
+  } else if (result.kind === "check") {
+    const drift = await checkSetup(process.cwd(), catalogRoot);
+    console.log(result.json || !process.stdout.isTTY ? JSON.stringify(drift, null, 2) : formatDrift(drift, createStyle()));
+    if (!drift.upToDate) process.exitCode = 1;
+  } else if (result.kind === "update") {
+    if (result.dryRun) await update(catalogRoot);
+    else {
+      const root = process.cwd();
+      if (!await readSetupConfig(root, catalogRoot)) throw new Error("update needs agents-cli.config.json (run setup first) or --dry-run.");
+      const drift = await checkSetup(root, catalogRoot);
+      if (drift.upToDate) console.log(result.yes || !process.stdout.isTTY ? JSON.stringify(drift, null, 2) : formatDrift(drift, createStyle()));
+      else {
+        const options = { config: "agents-cli.config.json", yes: result.yes, dryRun: false };
+        const report = await setupCommand(root, catalogRoot, options);
+        if (!isHumanSetup(options)) console.log(JSON.stringify(report, null, 2));
+      }
+    }
+  }
 } catch (error) {
   console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
