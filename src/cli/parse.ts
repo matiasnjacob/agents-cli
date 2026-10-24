@@ -20,6 +20,7 @@ export type CommandResult =
   | { kind: "init"; config: ValidatedConfig & { skills: string[]; yes: boolean; dryRun: boolean } }
   | { kind: "skills-list"; platform: Platform }
   | { kind: "skills-add"; platform: Platform; skill: string; dryRun: boolean }
+  | { kind: "skills-update"; id?: string; dryRun: boolean; yes: boolean }
   | { kind: "doctor"; json?: boolean }
   | { kind: "update"; dryRun: boolean; yes: boolean }
   | { kind: "check"; json: boolean };
@@ -42,6 +43,7 @@ export function usage(): string {
     "  agents-cli doctor [--json]",
     "  agents-cli update [--dry-run] [--yes]",
     "  agents-cli check [--json]",
+    "  agents-cli skills update [id] [--dry-run] [--yes]",
     "  agents-cli update --dry-run",
     "",
     "Commands:",
@@ -110,6 +112,14 @@ export function parseCommandArgs(args: string[]): CommandResult {
   if (command === "skills" && args[1] === "list") {
     const platform = validPlatform(option(args, "--platform"));
     return typeof platform === "string" ? { kind: "skills-list", platform } : platform;
+  }
+  if (command === "skills" && args[1] === "update") {
+    const rest = args.slice(2);
+    const flags = rest.filter((arg) => arg.startsWith("--"));
+    if (flags.some((flag) => flag !== "--dry-run" && flag !== "--yes")) return { kind: "error", message: `Unknown option '${flags.find((flag) => flag !== "--dry-run" && flag !== "--yes")}'.` };
+    const ids = rest.filter((arg) => !arg.startsWith("--"));
+    if (ids.length > 1) return { kind: "error", message: "skills update takes at most one skill id." };
+    return { kind: "skills-update", ...(ids[0] ? { id: ids[0] } : {}), dryRun: args.includes("--dry-run"), yes: args.includes("--yes") };
   }
   if (command === "skills" && args[1] === "add") {
     const skill = args[2];

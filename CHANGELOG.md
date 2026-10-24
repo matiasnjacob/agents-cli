@@ -11,6 +11,7 @@ and releases use semantic versioning.
 
 ## Unreleased
 
+- `check` reports pinned external skills that are behind upstream (informational, offline-safe); add `agents-cli skills update [id] [--dry-run] [--yes]` to move the pin through the normal setup plan.
 - Add `agents-cli check [--json]` (read-only drift report, exit 1 on drift) and make `agents-cli update` apply the configured setup (`--yes`, `--dry-run`); edited files stay conflicts.
 - Interactive setup ends with `Setup complete.` and a short "Before you start" checklist; doctor warnings are no longer printed during setup (only real failures). `agents-cli doctor` still reports everything.
 
