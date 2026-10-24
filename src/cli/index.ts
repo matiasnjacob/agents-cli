@@ -11,12 +11,12 @@ import type { Platform } from "../contract.js";
 import { applyInstall } from "../install/engine.js";
 import { listSkills, readCatalog, renderSkillFiles } from "../catalog/skills.js";
 import { runDoctor, formatDoctorReport } from "../doctor.js";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import {setupCommand,executeSetup,readSetupConfig,isHumanSetup} from '../setup/command.js';
 import {suites,resolveConfig,type Manifest} from '../setup/config.js';
 import {mcpCatalog} from '../setup/mcp.js';
 import {createStyle} from '../setup/ui.js';
-import {checkSetup,formatDrift} from '../setup/lifecycle.js';
+import {checkSetup,formatDrift,externalStatuses} from '../setup/lifecycle.js';
 import {decisionCommand} from '../decision/cli.js';
 
 const result = parseCommandArgs(process.argv.slice(2));
@@ -47,6 +47,7 @@ try {
   else if (result.kind === 'mcp-list') console.log(JSON.stringify(mcpCatalog.map(m=>({...m,supported:m.platforms.includes(result.platform)})),null,2));
   else if (result.kind === "validate") console.log(JSON.stringify(result.config, null, 2));
   else if (result.kind === "skills-list") console.log(JSON.stringify(listSkills(await readCatalog(catalogRoot)), null, 2));
+  else if (result.kind === "skills-update") await updateExternalSkills(result.id, result.dryRun, result.yes, catalogRoot);
   else if (result.kind === "skills-add") await addSkill(result.platform,result.skill,result.dryRun,catalogRoot);
   else if (result.kind === "init") await install(result.config.platform, result.config.tracker, result.config.skills, result.config.dryRun, catalogRoot, true);
   else if (result.kind === "doctor") {
@@ -130,4 +131,33 @@ async function renderPlatform(platform: Platform, catalogRoot: string, skills: s
   if (platform === "opencode") return renderOpenCode({ catalogRoot, selectedSkills: skills });
   if (platform === "claude") return renderClaude({ catalogRoot, selectedSkills: skills });
   return renderPi({ catalogRoot, selectedSkills: skills });
+}
+
+async function updateExternalSkills(id: string | undefined, dryRun: boolean, yes: boolean, catalogRoot: string) {
+  const root = process.cwd();
+  const file = join(root, "agents-cli.config.json");
+  let original: string;
+  try { original = await readFile(file, "utf8"); } catch { throw new Error("skills update needs agents-cli.config.json; run setup first."); }
+  const config = JSON.parse(original) as { skills?: unknown[] };
+  const statuses = (await externalStatuses(config.skills ?? [], undefined, id));
+  if (id && !statuses.length) throw new Error(`No external skill '${id}' in agents-cli.config.json.`);
+  const outdated = statuses.filter((status) => status.status === "outdated");
+  if (dryRun || !outdated.length) {
+    console.log(JSON.stringify({ dryRun, updated: false, externalSkills: statuses }, null, 2));
+    return;
+  }
+  for (const skill of config.skills ?? []) {
+    const match = outdated.find((status) => typeof skill !== "string" && (skill as { id: string }).id === status.id);
+    if (match) (skill as { revision: string }).revision = match.latest!;
+  }
+  await writeFile(file, JSON.stringify(config, null, 2) + "\n", "utf8");
+  const options = { config: "agents-cli.config.json", yes, dryRun: false };
+  try {
+    const report = await setupCommand(root, catalogRoot, options);
+    if ((report as { conflicts?: string[] }).conflicts?.length) await writeFile(file, original, "utf8");
+    if (!isHumanSetup(options)) console.log(JSON.stringify({ updated: true, externalSkills: outdated, report }, null, 2));
+  } catch (error) {
+    await writeFile(file, original, "utf8");
+    throw error;
+  }
 }

@@ -212,3 +212,29 @@ test('interactive setup ends with success and a short checklist, without doctor 
   assert.doesNotMatch(text,/NOT VERIFIED|identity|AGENTS_CLI_MCP_PROFILE/);
   assert.deepEqual(setupNextSteps({pending:['[codex] linear: complete OAuth; functional tool call NOT VERIFIED.','[claude] linear: complete OAuth; functional tool call NOT VERIFIED.'],variables:[],direnv:true,engramMissing:true}),['Install engram and make sure it is on your PATH.','Linear: sign in with OAuth the first time your agent uses it.','Start your agent runtime in this project.']);
 });
+
+test('external skill freshness compares pinned revisions with upstream and never counts as drift',async()=>{
+  const {externalStatuses,formatDrift}=await import('../dist/setup/lifecycle.js');
+  const old='a'.repeat(40),fresh='b'.repeat(40);
+  const skills=['plain',{id:'one',repository:'o/one',revision:old,path:'s'},{id:'two',repository:'o/two',revision:old,path:'s'},{id:'three',repository:'o/three',revision:old,path:'s'}];
+  const latest=async repository=>({'o/one':fresh,'o/two':old}[repository]);
+  const statuses=await externalStatuses(skills,latest);
+  assert.deepEqual(statuses.map(s=>[s.id,s.status]),[['one','outdated'],['two','current'],['three','unverified']]);
+  assert.deepEqual((await externalStatuses(skills,latest,'two')).map(s=>s.id),['two']);
+  const text=formatDrift({upToDate:true,creates:[],updates:[],removes:[],conflicts:[],environment:{add:[]},externalSkills:statuses});
+  assert.match(text,/Everything is up to date/);
+  assert.match(text,/compare\/a{40}\.\.\.b{40}/);
+  assert.match(text,/three: upstream revision not verified/);
+  assert.match(text,/skills update/);
+});
+
+test('skills update --dry-run reports statuses without touching the config',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'skills-update-'));
+  await writeFile(join(root,'input.json'),JSON.stringify(fixture));
+  await exec(process.execPath,[cli,'setup','--config','input.json','--yes'],{cwd:root});
+  const before=await readFile(join(root,'agents-cli.config.json'),'utf8');
+  const out=JSON.parse((await exec(process.execPath,[cli,'skills','update','--dry-run'],{cwd:root})).stdout);
+  assert.equal(out.updated,false); assert.equal(out.externalSkills[0].id,'brainstorming'); assert.equal(out.externalSkills[0].status,'unverified');
+  assert.equal(await readFile(join(root,'agents-cli.config.json'),'utf8'),before);
+  await assert.rejects(exec(process.execPath,[cli,'skills','update','nope','--dry-run'],{cwd:root}),/No external skill 'nope'/);
+});

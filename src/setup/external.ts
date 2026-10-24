@@ -55,3 +55,14 @@ export async function resolveExternalSkill(source:ExternalSkill,platform:Platfor
   } catch {throw new Error(`Could not resolve external skill ${source.id}; check repository, pinned commit, license and supported text resources.`);}
   finally {await rm(staging,{recursive:true,force:true});}
 }
+
+export type LatestRevision=(repository:string)=>Promise<string|undefined>;
+/** Upstream default-branch commit; undefined when it cannot be determined (offline, private, local override). */
+export const latestRevision:LatestRevision=async repository=>{
+  if (process.env.AGENTS_CLI_EXTERNAL_SKILLS_DIR) return;
+  try {
+    const {stdout}=await exec('git',['ls-remote','--',`https://github.com/${repository}.git`,'HEAD'],{timeout:15000,env:{...process.env,GIT_TERMINAL_PROMPT:'0'}});
+    const sha=stdout.split(/\s/)[0];
+    return /^[a-f0-9]{40}$/.test(sha)?sha:undefined;
+  } catch {return;}
+};
