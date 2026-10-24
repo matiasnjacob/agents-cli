@@ -5,8 +5,9 @@ Version `0.4.0` of the public package
 is published. Version `0.4.1` adds CLI version reporting and improves setup
 command discoverability. Version `0.4.2` adds an interactive keyboard setup wizard,
 project agent prefixes and safe migration from 0.4.1. Version `0.5.0` adds multi-platform setup,
-Engram and QA evidence skills and the always-installed brainstorming skill. The
-next planned release is `0.5.1`, which shows a concise setup plan summary. Releases install the
+Engram and QA evidence skills and the always-installed brainstorming skill. Version `0.5.1`
+shows a concise setup plan summary. The next planned release is `0.5.2`, which
+removes an accidental self-dependency. Releases install the
 `agents-cli` executable and are published by `.github/workflows/release.yml`.
 GitHub Releases provide the `.tgz`, `SHA256SUMS` and build-provenance attestation.
 
@@ -93,7 +94,7 @@ gh workflow run release.yml --ref main -f release_tag=v0.4.0
 ## Current status
 
 The npm Trusted Publisher, v0.4.0 package and `v0.4.0` GitHub Release are
-published. This branch prepares v0.5.1; create and push its tag only after the
+published. This branch prepares v0.5.2; create and push its tag only after the
 change is merged. See the [integration validation record](integration-validation.md)
 for test evidence.
 
