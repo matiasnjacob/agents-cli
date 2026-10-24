@@ -31,6 +31,8 @@ test("parses skills list and add commands", () => {
 
 test("parses doctor and only allows safe update preview", () => {
   assert.deepEqual(parseCommandArgs(["doctor"]), { kind: "doctor" });
+  assert.deepEqual(parseCommandArgs(["doctor", "--json"]), { kind: "doctor", json: true });
+  assert.equal(parseCommandArgs(["doctor", "--bad"]).kind, "error");
   assert.deepEqual(parseCommandArgs(["update", "--dry-run"]), { kind: "update", dryRun: true });
   assert.match(parseCommandArgs(["update"]).message, /requires --dry-run/);
 });

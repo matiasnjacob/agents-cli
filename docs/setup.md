@@ -121,3 +121,17 @@ References: [Claude project MCP](https://code.claude.com/docs/en/mcp),
 [Codex MCP](https://developers.openai.com/codex/mcp),
 [GitHub MCP](https://github.com/github/github-mcp-server),
 [Linear MCP](https://linear.app/docs/mcp).
+
+## Environment file and direnv
+
+When the selected MCP integrations need credentials (`github` needs `GITHUB_TOKEN`; `jev` needs the configured API key variable), setup creates:
+
+- `.env` with each required variable and an empty value, mode `0600`. Existing keys and values are never changed; only missing keys are appended.
+- `.envrc` with `dotenv_if_exists .env`, so direnv loads the file. An existing `.envrc` only gets that line appended.
+- a `.env` entry in `.gitignore` when it is not already ignored.
+
+These files are written outside the managed-file lockfile and backups, so secrets are never hashed or copied. Linear uses OAuth and Engram needs no variables, so neither adds an entry.
+
+direnv is not installed silently. In an interactive terminal with Homebrew, setup asks before running `brew install direnv`; otherwise it prints the command. Hook direnv into your shell once (`eval "$(direnv hook zsh)"`) and run `direnv allow` in the project.
+
+`agents-cli doctor` prints a readable report in a terminal and checks each variable (set in the environment or filled in `.env`) and direnv without printing values. Use `agents-cli doctor --json`, or pipe the output, for JSON.

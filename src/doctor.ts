@@ -6,6 +6,8 @@ import type { Platform } from "./contract.js";
 import { LOCKFILE } from "./install/engine.js";
 import {resolveConfig,type Manifest} from './setup/config.js';
 import {prepareMcp} from './setup/mcp.js';
+import {direnvAvailable,envStatus} from './setup/env.js';
+import {createStyle,type Style} from './setup/ui.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -46,6 +48,12 @@ async function setupChecks(options:DoctorOptions):Promise<Diagnostic[]> {
       }
       for (const message of new Set(plan.pending)) checks.push({name:'mcp-runtime',status:'warn',message});
     } catch {checks.push({name:'mcp-config',status:'fail',message:'MCP configuration conflicts with managed ownership; preserve local edits and preview setup.'});}
+    const variables=await envStatus(options.root,config,options.env??process.env);
+    for (const v of variables) {
+      const ok=v.inEnvironment||v.inFile;
+      checks.push({name:`env:${v.name}`,status:ok?'pass':'warn',message:v.inEnvironment?`${v.name} is set in the environment (${v.description}).`:v.inFile?`${v.name} has a value in .env; run direnv allow or export it so agents can see it.`:`${v.name} is empty or missing; fill it in .env (${v.description}).`});
+    }
+    if (variables.length) checks.push({name:'direnv',status:await direnvAvailable()?'pass':'warn',message:await direnvAvailable()?'direnv is installed; run direnv allow once in this project to load .env.':'direnv is not installed; install it (macOS: brew install direnv) so .env loads automatically.'});
     if (config.decisionSupport.mode!=='off') {
       checks.push({name:'jev-credentials',status:(options.env??process.env)[config.decisionSupport.apiKeyEnv]?'pass':'warn',message:(options.env??process.env)[config.decisionSupport.apiKeyEnv]?'Configured JEV credential variable is present; authentication NOT VERIFIED.':`Set ${config.decisionSupport.apiKeyEnv} in the runtime environment.`});
       checks.push({name:'jev-runtime',status:'warn',message:`JEV ${config.decisionSupport.mode} configured; live evaluation NOT VERIFIED. Run an explicit decision or dataset evaluation to check the API.`});
@@ -100,4 +108,22 @@ async function dockerCheck(env: NodeJS.ProcessEnv, dockerAvailable?: boolean): P
 function identityCheck(env: NodeJS.ProcessEnv): Diagnostic {
   if (!env.AGENTS_CLI_ACTOR) return { name: "identity", status: "warn", message: "No external actor alias is declared; doctor does not authenticate or print credentials." };
   return { name: "identity", status: "pass", message: `External actor alias '${env.AGENTS_CLI_ACTOR}' is declared; credential validity is not inferred.` };
+}
+
+const optionalChecks=new Set(['mcp','identity']);
+
+/** Human-readable report; secrets are never part of a diagnostic. */
+export function formatDoctorReport(report:DoctorReport,style:Style=createStyle(false)):string {
+  const lines=[style.heading('agents-cli doctor')];
+  const optional:Diagnostic[]=[];
+  for (const check of report.checks) {
+    if (check.status==='warn' && optionalChecks.has(check.name)) {optional.push(check);continue;}
+    const text=`${check.name}: ${check.message}`;
+    lines.push(check.status==='pass'?style.ok(text):check.status==='warn'?style.warn(text):style.fail(text));
+  }
+  const failed=report.checks.filter(c=>c.status==='fail').length,warned=report.checks.filter(c=>c.status==='warn'&&!optionalChecks.has(c.name)).length;
+  lines.push('',report.ok?style.ok(`Healthy: ${failed} failed, ${warned} warning(s).`):style.fail(`Unhealthy: ${failed} check(s) failed, ${warned} warning(s).`));
+  if (optional.length) lines.push(style.dim(`  Optional, not configured: ${optional.map(c=>c.name).join(', ')} (see docs/setup.md).`));
+  lines.push(style.dim('  Use `agents-cli doctor --json` for machine-readable output.'));
+  return lines.join('\n');
 }

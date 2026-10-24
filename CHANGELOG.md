@@ -9,6 +9,11 @@ and releases use semantic versioning.
 
 - Remove an accidental self-dependency (`@matiasnjacob/agents-cli`) that 0.5.1 declared in its own package.json.
 
+## 0.5.3 — prepared for release
+
+- Setup creates `.env` (empty placeholders for GITHUB_TOKEN and the JEV API key as needed), `.envrc` for direnv and a `.gitignore` entry; offers `brew install direnv`.
+- `doctor` prints a readable report in a terminal (`--json` or piping keeps JSON) and checks the environment variables and direnv.
+
 ## 0.5.1 — prepared for release
 
 - Interactive setup plan now shows the selected platforms, agents, tracker, MCPs, skills and JEV mode with file counts instead of listing every file.

@@ -7,6 +7,7 @@ import {confirm,isCancel,cancel,note} from '@clack/prompts';
 import {resolveConfig,type Manifest,type SetupConfig} from './config.js';
 import {prepareSetup,type Progress} from './install.js';
 import {createStyle,colorEnabled,paint} from './ui.js';
+import {applyEnv,planEnv,direnvAvailable,brewAvailable,installDirenvWithBrew,type EnvPlan} from './env.js';
 import type {InstallFile} from '../install/engine.js';
 import {cancelPromptOnInputEnd,collectAnswers} from './wizard.js';
 
@@ -31,7 +32,8 @@ export async function executeSetup(root:string,catalogRoot:string,config:SetupCo
   const manifest=await readCatalog(catalogRoot);
   const prepared=preparedSetup ?? await prepareSetup(root,catalogRoot,config,progress);
   const plan=await applyInstall({root,catalogVersion:manifest.catalogVersion,files:prepared.files,dryRun});
-  const report={config,platforms:config.platforms,dryRun,creates:plan.creates.map(f=>f.path),updates:plan.updates.map(f=>f.path),removes:plan.removes.map(f=>f.path),unchanged:plan.unchanged,conflicts:plan.conflicts,pending:prepared.pending};
+  const environment:EnvPlan=plan.conflicts.length||dryRun?await planEnv(root,config):await applyEnv(root,config);
+  const report={config,platforms:config.platforms,dryRun,environment,creates:plan.creates.map(f=>f.path),updates:plan.updates.map(f=>f.path),removes:plan.removes.map(f=>f.path),unchanged:plan.unchanged,conflicts:plan.conflicts,pending:prepared.pending};
   if (plan.conflicts.length) process.exitCode=1;
   return report;
 }
@@ -64,7 +66,7 @@ export async function setupCommand(root:string,catalogRoot:string,options:{confi
   }
 }
 
-export function formatSelectionSummary(report:Parameters<typeof formatSetupPreview>[0],style=createStyle(false)):string {
+export function formatSelectionSummary(report:Parameters<typeof formatSetupPreview>[0] & {environment?:EnvPlan},style=createStyle(false)):string {
   const full=formatSetupPreview(report).split('\n');
   const selection=full.slice(0,full.findIndex(line=>line.startsWith('CREATE (')));
   const lines=[style.heading('Setup plan'),...selection.map(line=>{
@@ -73,6 +75,7 @@ export function formatSelectionSummary(report:Parameters<typeof formatSetupPrevi
   })];
   const counts=`${report.creates.length} to create, ${report.updates.length} to update, ${report.removes.length} to remove, ${report.unchanged?.length ?? 0} unchanged`;
   lines.push(`  ${style.dim('│')} ${style.command('Files:')} ${counts}`);
+  if (report.environment?.variables.length) lines.push(`  ${style.dim('│')} ${style.command('Environment:')} .env (${report.environment.variables.map(v=>v.name).join(', ')}), .envrc for direnv`);
   for (const [label,paths] of [['UPDATE',report.updates],['REMOVE',report.removes],['CONFLICT',report.conflicts]] as const) {
     if (!paths.length) continue;
     lines.push(style[label==='CONFLICT'?'fail':'warn'](`${label} (${paths.length})`));
@@ -134,8 +137,24 @@ async function runSetupCommand(root:string,catalogRoot:string,options:{config?:s
     if (human) {
       write(diagnostics.ok?style.ok('Setup ready.'):style.warn('Setup installed; doctor found issues.'));
       for (const check of diagnostics.checks.filter(check=>check.status!=='pass')) write(check.status==='fail'?style.fail(`${check.name}: ${check.message}`):style.warn(`${check.name}: ${check.message}`));
+      const vars=report.environment.variables.map(v=>v.name);
+      const next:string[]=[];
+      if (vars.length) {
+        write(style.ok(`Environment files ready: .env (${report.environment.add.length} variable(s) added, values left empty), .envrc`));
+        let direnv=await direnvAvailable();
+        if (!direnv && await brewAvailable()) {
+          const answer=await ui.confirm('direnv is not installed. Install it with Homebrew (brew install direnv)?');
+          if (!ui.isCancel(answer) && answer) {
+            write(style.step('Installing direnv with Homebrew'));
+            try {await installDirenvWithBrew();direnv=true;write(style.ok('direnv installed.'));} catch {write(style.warn('direnv installation failed; install it manually.'));}
+          }
+        }
+        next.push(`Fill in ${vars.join(', ')} in .env (never commit it).`);
+        if (!direnv) next.push('Install direnv (macOS: brew install direnv; Linux: your package manager) so .env loads automatically.');
+        next.push('Hook direnv into your shell once (zsh: eval "$(direnv hook zsh)" in ~/.zshrc), then run: direnv allow');
+      }
       write(style.badge('NEXT','Next steps'));
-      const next=[...report.pending,'Review the generated agents and skills, then start your agent runtime in this project.','Re-run diagnostics any time with: agents-cli doctor'];
+      next.push(...report.pending,'Review the generated agents and skills, then start your agent runtime in this project.','Re-run diagnostics any time with: agents-cli doctor');
       for (const line of next) write(`    ${style.dim('-')} ${line}`);
       write('');
     }

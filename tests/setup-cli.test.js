@@ -142,3 +142,32 @@ test('interactive plan shows the selection and file counts, not every file',asyn
   assert.match(text,/Files: \d+ to create/);
   assert.doesNotMatch(text,/CREATE \.claude/);
 });
+
+test('setup writes .env placeholders, .envrc and .gitignore without exposing or overwriting secrets',async()=>{
+  const {resolveConfig}=await import('../dist/setup/config.js');
+  const {executeSetup}=await import('../dist/setup/command.js');
+  const {runDoctor,formatDoctorReport}=await import('../dist/doctor.js');
+  const catalogRoot=join(import.meta.dirname,'../catalog');
+  const manifest=JSON.parse(await readFile(join(catalogRoot,'manifest.json'),'utf8'));
+  const config=resolveConfig({schemaVersion:1,platforms:['claude'],suite:'review-qa',tracker:'none',mcps:['github','engram','jev'],decisionSupport:{mode:'assist'}},manifest);
+  const root=await mkdtemp(join(tmpdir(),'setup-env-'));
+  await writeFile(join(root,'.gitignore'),'node_modules');
+  await writeFile(join(root,'.env'),'EXISTING=keep\nGITHUB_TOKEN=secret-value\n');
+  const dry=await executeSetup(root,catalogRoot,config,true);
+  assert.deepEqual(dry.environment.add,['TYPESAFE_API_KEY']);
+  assert.equal(await readFile(join(root,'.env'),'utf8'),'EXISTING=keep\nGITHUB_TOKEN=secret-value\n');
+  await executeSetup(root,catalogRoot,config,false);
+  const env=await readFile(join(root,'.env'),'utf8');
+  assert.match(env,/^EXISTING=keep\nGITHUB_TOKEN=secret-value\n/);
+  assert.match(env,/\nTYPESAFE_API_KEY=\n/);
+  assert.equal(await readFile(join(root,'.envrc'),'utf8'),'dotenv_if_exists .env\n');
+  assert.equal(await readFile(join(root,'.gitignore'),'utf8'),'node_modules\n.env\n');
+  assert.doesNotMatch(await readFile(join(root,'.agents-cli.lock.json'),'utf8'),/\.env/);
+  const again=await executeSetup(root,catalogRoot,config,false);
+  assert.deepEqual([again.environment.envFile,again.environment.envrc,again.environment.gitignore],['ok','ok','ok']);
+  const report=await runDoctor({root,catalogRoot,env:{}});
+  assert.equal(report.checks.find(c=>c.name==='env:TYPESAFE_API_KEY').status,'warn');
+  assert.equal(report.checks.find(c=>c.name==='env:GITHUB_TOKEN').status,'pass');
+  assert.doesNotMatch(JSON.stringify(report),/secret-value/);
+  assert.match(formatDoctorReport(report),/Use `agents-cli doctor --json`/);
+});
