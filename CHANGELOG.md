@@ -9,6 +9,10 @@ and releases use semantic versioning.
 
 - Remove an accidental self-dependency (`@matiasnjacob/agents-cli`) that 0.5.1 declared in its own package.json.
 
+## Unreleased
+
+- Interactive setup ends with `Setup complete.` and a short "Before you start" checklist; doctor warnings are no longer printed during setup (only real failures). `agents-cli doctor` still reports everything.
+
 ## 0.5.3 — prepared for release
 
 - Setup creates `.env` (empty placeholders for GITHUB_TOKEN and the JEV API key as needed), `.envrc` for direnv and a `.gitignore` entry; offers `brew install direnv`.

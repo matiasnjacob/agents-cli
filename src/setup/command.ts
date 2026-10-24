@@ -7,7 +7,7 @@ import {confirm,isCancel,cancel,note} from '@clack/prompts';
 import {resolveConfig,type Manifest,type SetupConfig} from './config.js';
 import {prepareSetup,type Progress} from './install.js';
 import {createStyle,colorEnabled,paint} from './ui.js';
-import {applyEnv,planEnv,direnvAvailable,brewAvailable,installDirenvWithBrew,type EnvPlan} from './env.js';
+import {applyEnv,planEnv,direnvAvailable,brewAvailable,commandAvailable,installDirenvWithBrew,type EnvPlan} from './env.js';
 import type {InstallFile} from '../install/engine.js';
 import {cancelPromptOnInputEnd,collectAnswers} from './wizard.js';
 
@@ -50,6 +50,26 @@ export function formatSetupPreview(report:{config:Pick<SetupConfig,'suite'|'agen
   lines.push(`UNCHANGED (${report.unchanged?.length ?? 0})`);
   lines.push(...(report.unchanged?.length?report.unchanged.map(path=>`  UNCHANGED ${path}`):['  (none)']));
   return lines.join('\n');
+}
+
+/** Short, deduplicated list of what the user still has to do; no diagnostics or NOT VERIFIED noise. */
+export function setupNextSteps(input:{pending:string[];variables:string[];direnv:boolean;engramMissing:boolean}):string[] {
+  const steps:string[]=[];
+  if (input.variables.length) {
+    steps.push(`Fill in ${input.variables.join(', ')} in .env (never commit it).`);
+    steps.push(input.direnv?'Load it with direnv: run `direnv allow` once in this project.':'Install direnv (macOS: brew install direnv), hook it into your shell, then run `direnv allow`.');
+  }
+  if (input.engramMissing) steps.push('Install engram and make sure it is on your PATH.');
+  const seen=new Set<string>();
+  for (const message of input.pending) {
+    const text=message.replace(/^\[[a-z]+\] /,'').replace(/;? ?functional tool call NOT VERIFIED\.?/,'').trim();
+    const id=text.split(':')[0];
+    if (['github','jev','engram'].includes(id) || seen.has(text)) continue;
+    seen.add(text);
+    steps.push(id==='linear'?'Linear: sign in with OAuth the first time your agent uses it.':text.replace(/\.?$/,'.'));
+  }
+  steps.push('Start your agent runtime in this project.');
+  return steps;
 }
 
 export function isHumanSetup(options:{yes:boolean;dryRun:boolean},ui:Pick<SetupTerminal,'isInteractive'>=terminal):boolean {
@@ -132,16 +152,15 @@ async function runSetupCommand(root:string,catalogRoot:string,options:{config?:s
       return report;
     }
     if (human) write(style.ok(`Files installed: ${report.creates.length} created, ${report.updates.length} updated, ${report.removes.length} removed, ${report.unchanged.length} unchanged`));
-    if (human) write(style.step('Running doctor'));
+    if (human) write(style.step('Verifying installation'));
     const diagnostics=await runDoctor({root,catalogRoot});
     if (human) {
-      write(diagnostics.ok?style.ok('Setup ready.'):style.warn('Setup installed; doctor found issues.'));
-      for (const check of diagnostics.checks.filter(check=>check.status!=='pass')) write(check.status==='fail'?style.fail(`${check.name}: ${check.message}`):style.warn(`${check.name}: ${check.message}`));
+      const failures=diagnostics.checks.filter(check=>check.status==='fail');
       const vars=report.environment.variables.map(v=>v.name);
-      const next:string[]=[];
+      let direnv=true;
       if (vars.length) {
         write(style.ok(`Environment files ready: .env (${report.environment.add.length} variable(s) added, values left empty), .envrc`));
-        let direnv=await direnvAvailable();
+        direnv=await direnvAvailable();
         if (!direnv && await brewAvailable()) {
           const answer=await ui.confirm('direnv is not installed. Install it with Homebrew (brew install direnv)?');
           if (!ui.isCancel(answer) && answer) {
@@ -149,14 +168,16 @@ async function runSetupCommand(root:string,catalogRoot:string,options:{config?:s
             try {await installDirenvWithBrew();direnv=true;write(style.ok('direnv installed.'));} catch {write(style.warn('direnv installation failed; install it manually.'));}
           }
         }
-        next.push(`Fill in ${vars.join(', ')} in .env (never commit it).`);
-        if (!direnv) next.push('Install direnv (macOS: brew install direnv; Linux: your package manager) so .env loads automatically.');
-        next.push('Hook direnv into your shell once (zsh: eval "$(direnv hook zsh)" in ~/.zshrc), then run: direnv allow');
       }
-      write(style.badge('NEXT','Next steps'));
-      next.push(...report.pending,'Review the generated agents and skills, then start your agent runtime in this project.','Re-run diagnostics any time with: agents-cli doctor');
+      if (failures.length) {
+        write(style.fail('Setup installed, but verification found problems:'));
+        for (const check of failures) write(style.fail(`${check.name}: ${check.message}`));
+      } else write(style.ok('Setup complete.'));
+      const engramMissing=config.mcps.includes('engram') && !await commandAvailable('engram');
+      const next=setupNextSteps({pending:report.pending,variables:vars,direnv,engramMissing});
+      write(style.badge('NEXT','Before you start'));
       for (const line of next) write(`    ${style.dim('-')} ${line}`);
-      write('');
+      write(`\n    ${style.dim('Details and diagnostics any time:')} ${style.command('agents-cli doctor')}\n`);
     }
     return {...report,diagnostics};
   } catch(error) {
