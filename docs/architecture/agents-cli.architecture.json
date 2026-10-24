@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura de agents-cli",
+    "output": "agents-cli.html",
+    "quality_profile": "showcase",
+    "viewBox": [1340, 580],
+    "views": [
+      {
+        "id": "flujo-principal",
+        "label": "Inicialización de un proyecto",
+        "focus": ["developer", "cli", "adapterContract", "piAdapter", "installer", "targetRepo"],
+        "note": "Desde la selección de plataforma hasta los recursos administrados en el repositorio destino."
+      },
+      {
+        "id": "soporte-pi",
+        "label": "Soporte para Pi",
+        "focus": ["piAdapter", "targetRepo", "piRuntime"],
+        "note": "Roles, skills, instrucciones y extensión subagent cargados bajo project trust."
+      },
+      {
+        "id": "distribucion",
+        "label": "Distribución versionada",
+        "focus": ["sourceRepo", "releasePipeline", "releaseAsset"],
+        "note": "Los tags versionados producen un tarball, checksum y provenance attestation."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "developer",
+      "type": "external",
+      "label": "Persona desarrolladora",
+      "sublabel": "CLI / terminal",
+      "pos": [40, 170],
+      "size": [160, 72]
+    },
+    {
+      "id": "cli",
+      "type": "frontend",
+      "label": "agents-cli",
+      "sublabel": "init · skills · doctor · update",
+      "tag": "Node.js ≥20",
+      "pos": [270, 170],
+      "size": [190, 72]
+    },
+    {
+      "id": "catalog",
+      "type": "database",
+      "label": "Catálogo canónico",
+      "sublabel": "7 agentes · skills · workflows",
+      "pos": [270, 20],
+      "size": [190, 72]
+    },
+    {
+      "id": "adapterContract",
+      "type": "backend",
+      "label": "Contrato de plataforma",
+      "sublabel": "selección y renderizado portable",
+      "pos": [540, 170],
+      "size": [200, 72]
+    },
+    {
+      "id": "legacyAdapters",
+      "type": "backend",
+      "label": "Adaptadores existentes",
+      "sublabel": "Codex · OpenCode · Claude Code",
+      "pos": [540, 20],
+      "size": [200, 72]
+    },
+    {
+      "id": "piAdapter",
+      "type": "backend",
+      "label": "Adaptador Pi",
+      "sublabel": "agents · skills · APPEND_SYSTEM",
+      "tag": "subagent extension",
+      "pos": [810, 170],
+      "size": [190, 78]
+    },
+    {
+      "id": "installer",
+      "type": "security",
+      "label": "Motor de instalación",
+      "sublabel": "dry-run · hashes · backups",
+      "tag": "conflict-safe",
+      "pos": [1080, 170],
+      "size": [190, 78]
+    },
+    {
+      "id": "targetRepo",
+      "type": "external",
+      "label": "Repositorio destino",
+      "sublabel": ".pi/ + lockfile administrado",
+      "pos": [1080, 320],
+      "size": [190, 76]
+    },
+    {
+      "id": "piRuntime",
+      "type": "external",
+      "label": "Runtime Pi",
+      "sublabel": "project trust + proceso aislado",
+      "pos": [810, 320],
+      "size": [190, 76]
+    },
+    {
+      "id": "sourceRepo",
+      "type": "database",
+      "label": "Repositorio agents-cli",
+      "sublabel": "main + tag v*",
+      "pos": [80, 460],
+      "size": [185, 70]
+    },
+    {
+      "id": "releasePipeline",
+      "type": "cloud",
+      "label": "GitHub Actions",
+      "sublabel": "typecheck · build · tests · pack",
+      "pos": [390, 460],
+      "size": [205, 70]
+    },
+    {
+      "id": "releaseAsset",
+      "type": "external",
+      "label": "GitHub Release",
+      "sublabel": ".tgz · SHA256SUMS · attestation",
+      "pos": [730, 460],
+      "size": [220, 70]
+    }
+  ],
+  "connections": [
+    {
+      "id": "invoke-cli",
+      "from": "developer",
+      "to": "cli",
+      "label": "ejecuta CLI",
+      "variant": "emphasis"
+    },
+    {
+      "id": "read-catalog",
+      "from": "catalog",
+      "to": "cli",
+      "label": "manifest + contenido",
+      "labelAt": [365, 130],
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "select-platform",
+      "from": "cli",
+      "to": "adapterContract",
+      "label": "selecciona",
+      "variant": "emphasis"
+    },
+    {
+      "id": "render-existing",
+      "from": "adapterContract",
+      "to": "legacyAdapters",
+      "label": "renderiza configuración",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "render-pi",
+      "from": "adapterContract",
+      "to": "piAdapter",
+      "label": "renderiza",
+      "variant": "emphasis"
+    },
+    {
+      "id": "plan-files",
+      "from": "piAdapter",
+      "to": "installer",
+      "label": "InstallFile[]",
+      "labelAt": [1040, 285],
+      "variant": "emphasis"
+    },
+    {
+      "id": "write-managed-files",
+      "from": "installer",
+      "to": "targetRepo",
+      "label": "escritura + hashes",
+      "labelAt": [1175, 285],
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "load-project-resources",
+      "from": "targetRepo",
+      "to": "piRuntime",
+      "label": "project trust",
+      "variant": "security"
+    },
+    {
+      "id": "delegate-subagent",
+      "from": "piRuntime",
+      "to": "piAdapter",
+      "label": "subagent aislado",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "tag-release",
+      "from": "sourceRepo",
+      "to": "releasePipeline",
+      "label": "push tag v*"
+    },
+    {
+      "id": "publish-assets",
+      "from": "releasePipeline",
+      "to": "releaseAsset",
+      "label": "tarball + checksum"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Portabilidad",
+      "items": [
+        "Un catálogo común alimenta cuatro adaptadores",
+        "Los agentes no fijan modelo, proveedor ni credenciales"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Instalación segura",
+      "items": [
+        "Dry-run, idempotencia y detección de conflictos",
+        "Backups y hashes en .agents-cli.lock.json"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Pi",
+      "items": [
+        "Recursos locales bajo .pi/",
+        "Delegación aislada con allowlist de herramientas"
+      ]
+    }
+  ]
+}

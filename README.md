@@ -17,6 +17,15 @@ Install the published CLI from npm as `@matiasnjacob/agents-cli`. Check the
 installed version with `agents-cli --version`, then run `agents-cli setup` to
 configure a project.
 
+## Architecture
+
+[![agents-cli architecture](docs/architecture/agents-cli.png)](docs/architecture/agents-cli.html)
+
+The [interactive architecture diagram](docs/architecture/agents-cli.html) shows
+the canonical catalog, platform adapters, safe installation engine, Pi runtime
+integration, and versioned release pipeline. Its validated Archify source is
+available at [`docs/architecture/agents-cli.architecture.json`](docs/architecture/agents-cli.architecture.json).
+
 ## What it installs
 
 An initialization writes only into the target repository and records managed
