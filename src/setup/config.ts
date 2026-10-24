@@ -16,8 +16,10 @@ export interface DecisionConfig {
 }
 export interface ExternalSkill { id: string; repository: string; revision: string; path: string; }
 export type SkillSelection = string | ExternalSkill;
+/** Installed on every platform; pinned from skills.sh (obra/superpowers). */
+export const brainstormingSkill: ExternalSkill = {id:'brainstorming',repository:'obra/superpowers',revision:'2ce8aa15d05bd57213e6f746f953aafb7ded7a8b',path:'skills/brainstorming'};
 export interface SetupConfig {
-  schemaVersion: 1; platform: Platform; suite: keyof typeof suites; agents: string[]; agentPrefix: string;
+  schemaVersion: 1; platforms: Platform[]; suite: keyof typeof suites; agents: string[]; agentPrefix: string;
   tracker: Tracker; skills: SkillSelection[]; mcps: string[]; decisionSupport: DecisionConfig;
 }
 export interface Manifest {
@@ -71,9 +73,12 @@ export function decisionConfig(value: unknown = {}): DecisionConfig {
 export function skillIds(config: SetupConfig): string[] { return config.skills.map(s=>typeof s==='string'?s:s.id); }
 export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
   const v=object(value,'setup config');
-  keys(v,['schemaVersion','platform','suite','agents','agentPrefix','tracker','skills','mcps','decisionSupport']);
+  keys(v,['schemaVersion','platform','platforms','suite','agents','agentPrefix','tracker','skills','mcps','decisionSupport']);
   if (v.schemaVersion!==1) throw new Error('schemaVersion must be 1.');
-  if (!supportedPlatforms.includes(v.platform as Platform)) throw new Error('Invalid platform.');
+  if (v.platform!==undefined && v.platforms!==undefined) throw new Error('Use either platform or platforms, not both.');
+  const rawPlatforms=v.platforms ?? (v.platform===undefined?undefined:[v.platform]);
+  if (!Array.isArray(rawPlatforms) || !rawPlatforms.length || new Set(rawPlatforms).size!==rawPlatforms.length || rawPlatforms.some(p=>!supportedPlatforms.includes(p as Platform))) throw new Error('Invalid platform.');
+  const platforms=rawPlatforms as Platform[];
   if (!supportedTrackers.includes(v.tracker as Tracker)) throw new Error('Invalid tracker.');
   if (typeof v.suite!=='string' || !Object.hasOwn(suites,v.suite)) throw new Error('Invalid suite.');
   const suite=v.suite as keyof typeof suites;
@@ -92,6 +97,7 @@ export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
     if (typeof x.path!=='string' || !x.path || x.path.startsWith('/') || x.path.includes('\\') || x.path.split('/').some(p=>p==='..'||p===''||p==='.git')) throw new Error('Unsafe external skill path.');
     return x as unknown as ExternalSkill;
   });
+  if (!skills.some(s=>typeof s!=='string' && s.id===brainstormingSkill.id)) skills.push({...brainstormingSkill});
   const ids=skills.map(s=>typeof s==='string'?s:s.id);
   if (new Set(ids).size!==ids.length) throw new Error('Duplicate skills.');
   for (const agent of agents) for (const id of manifest.agents.find(a=>a.id===agent)?.requiredSkills ?? []) {
@@ -99,8 +105,8 @@ export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
     if (!ids.includes(id)) { skills.push(id); ids.push(id); }
   }
   const mcps=strings(v.mcps ?? [],'mcps');
-  if (mcps.some(id=>!['github','linear','trello','jev'].includes(id))) throw new Error('Unknown MCP.');
+  if (mcps.some(id=>!['github','linear','trello','jev','engram'].includes(id))) throw new Error('Unknown MCP.');
   const decisionSupport=decisionConfig(v.decisionSupport);
   if (mcps.includes('jev') && decisionSupport.mode==='off') throw new Error('Enable decisionSupport before selecting jev MCP.');
-  return {schemaVersion:1,platform:v.platform as Platform,suite,agents,agentPrefix,tracker:v.tracker as Tracker,skills,mcps,decisionSupport};
+  return {schemaVersion:1,platforms,suite,agents,agentPrefix,tracker:v.tracker as Tracker,skills,mcps,decisionSupport};
 }

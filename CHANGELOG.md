@@ -5,6 +5,13 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
+## Unreleased
+
+- Add `engram-session` skill: every agent syncs its Engram session before work and saves it before reporting; `engram` MCP option.
+- Add `qa-test-evidence` skill: QA agents generate test cases with JEV and record Playwright evidence.
+- Always install `brainstorming` from skills.sh (obra/superpowers, pinned commit) for every agent and platform.
+- Interactive setup: multi-platform selection (`platforms`, `platform` still accepted), colored progress output, no JSON dump, explicit plan confirmation.
+
 ## 0.3.0 — prepared for release
 
 - Add interactive setup, reproducible configuration, selectable agent suites and required skill resolution.

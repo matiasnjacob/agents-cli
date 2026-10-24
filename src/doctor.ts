@@ -36,14 +36,15 @@ async function setupChecks(options:DoctorOptions):Promise<Diagnostic[]> {
   try {raw=await readFile(join(options.root,'agents-cli.config.json'),'utf8');} catch(e) {if ((e as NodeJS.ErrnoException).code==='ENOENT') return [];return [{name:'setup',status:'fail',message:'Setup configuration cannot be read.'}];}
   try {
     const manifest=JSON.parse(await readFile(join(options.catalogRoot,'manifest.json'),'utf8')) as Manifest;
-    const config=resolveConfig(JSON.parse(raw),manifest),checks:Diagnostic[]=[{name:'setup',status:'pass',message:`${config.suite} suite configured for ${config.platform}; ${config.agents.length} roles selected.`}];
+    const config=resolveConfig(JSON.parse(raw),manifest),checks:Diagnostic[]=[{name:'setup',status:'pass',message:`${config.suite} suite configured for ${config.platforms.join(', ')}; ${config.agents.length} roles selected.`}];
     try {
-      const plan=await prepareMcp(options.root,config);
+      const plan={files:[] as {path:string;content:string}[],pending:[] as string[]};
+      for (const platform of config.platforms) {const next=await prepareMcp(options.root,{platform,mcps:config.mcps});plan.files.push(...next.files);plan.pending.push(...next.pending);}
       for (const file of plan.files) {
         let current:string|undefined;try {current=await readFile(join(options.root,file.path),'utf8');} catch { /* Report configuration absent. */ }
         checks.push({name:`mcp-config:${file.path}`,status:current===file.content?'pass':'warn',message:current===file.content?'Selected MCP configuration is present.':'MCP configuration is missing or differs; preview setup before applying.'});
       }
-      for (const message of plan.pending) checks.push({name:'mcp-runtime',status:'warn',message});
+      for (const message of new Set(plan.pending)) checks.push({name:'mcp-runtime',status:'warn',message});
     } catch {checks.push({name:'mcp-config',status:'fail',message:'MCP configuration conflicts with managed ownership; preserve local edits and preview setup.'});}
     if (config.decisionSupport.mode!=='off') {
       checks.push({name:'jev-credentials',status:(options.env??process.env)[config.decisionSupport.apiKeyEnv]?'pass':'warn',message:(options.env??process.env)[config.decisionSupport.apiKeyEnv]?'Configured JEV credential variable is present; authentication NOT VERIFIED.':`Set ${config.decisionSupport.apiKeyEnv} in the runtime environment.`});

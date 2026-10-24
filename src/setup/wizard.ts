@@ -2,6 +2,7 @@ import {createInterface} from 'node:readline';
 import { cancel, intro, isCancel, log, multiselect, select, text, updateSettings } from '@clack/prompts';
 import {supportedPlatforms,supportedTrackers} from '../contract.js';
 import {resolveConfig,suites,type Manifest,type SetupConfig} from './config.js';
+import {createStyle} from './ui.js';
 
 type SelectOptions = {message:string;options:{value:string;label?:string;hint?:string}[];initialValue?:string;maxItems?:number};
 type MultiOptions = {message:string;options:{value:string;label?:string;hint?:string}[];initialValues?:string[];required?:boolean;maxItems?:number};
@@ -45,9 +46,11 @@ function labels(values:readonly string[]):{value:string;label:string}[] {
 }
 
 export async function collectAnswers(manifest:Manifest,previous?:SetupConfig,prompts:WizardPrompts=defaultPrompts,terminalWidth=process.stdout.columns ?? 80):Promise<SetupConfig> {
-  prompts.intro(renderWelcomeBanner(terminalWidth));
+  const style=createStyle();
+  prompts.intro(style.heading('agents-cli setup').trimStart()+'\n'+style.dim(renderWelcomeBanner(terminalWidth)));
   prompts.log.info('Keyboard: ↑/↓ move; Space toggle multi-select; Enter continue.');
-  const platform=accepted(await prompts.select({message:'Choose an agent platform',options:labels(supportedPlatforms),initialValue:previous?.platform ?? 'codex'}),prompts);
+  const platforms=accepted(await prompts.multiselect({message:'Choose agent platforms (Space toggles; select one or more, e.g. codex + claude)',options:labels(supportedPlatforms),initialValues:previous?.platforms ?? ['codex'],required:true,maxItems:6}),prompts);
+  if (!platforms.length) throw new Error('Select at least one platform.');
   const suite=accepted(await prompts.select({message:'Choose an agent suite',options:labels(Object.keys(suites)),initialValue:previous?.suite ?? 'complete'}),prompts) as keyof typeof suites;
   const prefixValue=accepted(await prompts.text({
     message:'Project prefix for installed agents (optional)',
@@ -60,8 +63,8 @@ export async function collectAnswers(manifest:Manifest,previous?:SetupConfig,pro
   const agents=accepted(await prompts.multiselect({message:'Select agents (↑/↓ move, Space toggle, Enter continue)',options:agentOptions,initialValues:preset,required:false,maxItems:10}),prompts);
   prompts.log.info(`Agents: ${agents.length} selected`);
   const tracker=accepted(await prompts.select({message:'Choose a project tracker',options:labels(supportedTrackers),initialValue:previous?.tracker ?? 'none'}),prompts);
-  const defaultMcps=previous?.mcps.filter(id=>id!=='jev') ?? (tracker==='none'?[]:[tracker]);
-  const mcps=accepted(await prompts.multiselect({message:'Select MCP integrations (authentication is configured separately)',options:labels(['github','linear','trello']),initialValues:defaultMcps,required:false,maxItems:6}),prompts);
+  const defaultMcps=previous?.mcps.filter(id=>id!=='jev') ?? (tracker==='none'?['engram']:[tracker,'engram']);
+  const mcps=accepted(await prompts.multiselect({message:'Select MCP integrations (authentication is configured separately)',options:labels(['github','linear','trello','engram']),initialValues:defaultMcps,required:false,maxItems:6}),prompts);
   prompts.log.info(`MCPs: ${mcps.length} selected`);
   const required=new Set(agents.flatMap(id=>manifest.agents.find(agent=>agent.id===id)?.requiredSkills ?? []));
   const previousSkills=previous?.skills.filter((skill):skill is string=>typeof skill==='string') ?? [];
@@ -69,9 +72,12 @@ export async function collectAnswers(manifest:Manifest,previous?:SetupConfig,pro
   prompts.log.info(`Required skills: ${[...required].join(', ') || 'none'} (always enabled)`);
   const optionalSkills=accepted(await prompts.multiselect({message:'Select optional skills (required skills stay enabled; ↑/↓ move, Space toggle, Enter continue)',options:skillOptions,initialValues:previousSkills.filter(skill=>!required.has(skill)),required:false,maxItems:12}),prompts);
   const skills=[...new Set([...required,...optionalSkills])];
+  prompts.log.info('brainstorming (skills.sh, obra/superpowers) is always installed for every agent.');
   prompts.log.info(`Skills: ${skills.length} selected`);
-  const mode=accepted(await prompts.select({message:'Choose JEV decision support mode',options:labels(['off','shadow','assist']),initialValue:previous?.decisionSupport.mode ?? 'off'}),prompts);
-  const priorExternal=previous?.skills.filter((skill):skill is Exclude<typeof skill,string>=>typeof skill!=='string') ?? [];
+  const qa=agents.some(id=>id==='qa-manual'||id==='qa-automator');
+  if (qa) prompts.log.info('QA agents always generate test cases with JEV and record Playwright evidence; shadow or assist mode is required.');
+  const mode=accepted(await prompts.select({message:'Choose JEV decision support mode',options:labels(['off','shadow','assist']),initialValue:previous?.decisionSupport.mode ?? (qa?'assist':'off')}),prompts);
+  const priorExternal=previous?.skills.filter((skill):skill is Exclude<typeof skill,string>=>typeof skill!=='string' && skill.id!=='brainstorming') ?? [];
   const external=accepted(await prompts.text({message:'External skills JSON (Enter to skip)',placeholder:'Optional JSON array of {id, repository, revision, path}',defaultValue:priorExternal.length?JSON.stringify(priorExternal):''}),prompts);
   let externalSkills:unknown[]=[];
   if (external.trim() && external.trim()!=='no') {
@@ -79,8 +85,8 @@ export async function collectAnswers(manifest:Manifest,previous?:SetupConfig,pro
     if (!Array.isArray(externalSkills)) throw new Error('External skills must be a JSON array.');
   }
   const selectedMcps=[...mcps];
-  if (mode!=='off' && platform!=='pi') selectedMcps.push('jev');
-  const config=resolveConfig({schemaVersion:1,platform,suite,agents,agentPrefix:prefixValue,tracker,skills:[...skills,...externalSkills],mcps:selectedMcps,decisionSupport:{...previous?.decisionSupport,mode}},manifest);
+  if (mode!=='off' && platforms.some(platform=>platform!=='pi')) selectedMcps.push('jev');
+  const config=resolveConfig({schemaVersion:1,platforms,suite,agents,agentPrefix:prefixValue,tracker,skills:[...skills,...externalSkills],mcps:selectedMcps,decisionSupport:{...previous?.decisionSupport,mode}},manifest);
   return config;
 }
 

@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.js"
+    "test": "AGENTS_CLI_EXTERNAL_SKILLS_DIR=$PWD/tests/fixtures/external node --test tests/*.test.js"
   },
   "engines": {
     "node": ">=20"
