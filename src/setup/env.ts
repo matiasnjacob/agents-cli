@@ -82,6 +82,9 @@ export async function applyEnv(root:string,config:Pick<SetupConfig,'mcps'|'decis
 export async function direnvAvailable():Promise<boolean> {
   try {await exec('direnv',['version'],{timeout:5000});return true;} catch {return false;}
 }
+export async function commandAvailable(command:string):Promise<boolean> {
+  try {await exec('sh',['-c',`command -v ${command}`],{timeout:5000});return true;} catch {return false;}
+}
 export async function brewAvailable():Promise<boolean> {
   try {await exec('brew',['--version'],{timeout:5000});return true;} catch {return false;}
 }
