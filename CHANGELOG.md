@@ -9,7 +9,7 @@ and releases use semantic versioning.
 
 - Remove an accidental self-dependency (`@matiasnjacob/agents-cli`) that 0.5.1 declared in its own package.json.
 
-## Unreleased
+## 0.5.3 — prepared for release
 
 - Setup creates `.env` (empty placeholders for GITHUB_TOKEN and the JEV API key as needed), `.envrc` for direnv and a `.gitignore` entry; offers `brew install direnv`.
 - `doctor` prints a readable report in a terminal (`--json` or piping keeps JSON) and checks the environment variables and direnv.
