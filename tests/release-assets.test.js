@@ -18,7 +18,7 @@ test("installer resolves releases through the GitHub API and verifies checksums"
 test("npm package uses the scoped identity and preserves the CLI executable", async () => {
   const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
   assert.equal(manifest.name, "@matiasnjacob/agents-cli");
-  assert.equal(manifest.version, "0.4.2");
+  assert.equal(manifest.version, "0.5.0");
   const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
   assert.equal(lock.version, manifest.version);
   assert.equal(lock.packages[""].version, manifest.version);
