@@ -197,3 +197,18 @@ test('check reports drift with exit 1 and update restores it',async()=>{
   const noConfig=await mkdtemp(join(tmpdir(),'setup-lifecycle-none-'));
   await assert.rejects(exec(process.execPath,[cli,'update','--yes'],{cwd:noConfig}),/agents-cli.config.json/);
 });
+test('interactive setup ends with success and a short checklist, without doctor warnings',async()=>{
+  const {setupCommand,setupNextSteps}=await import('../dist/setup/command.js');
+  const root=await mkdtemp(join(tmpdir(),'setup-success-'));
+  await writeFile(join(root,'input.json'),JSON.stringify({...fixture,mcps:['github','linear'],tracker:'linear'}));
+  const out=[];
+  const ui={isInteractive:()=>true,note(){},confirm:async()=>false,isCancel:()=>false,cancel(){},write:text=>out.push(text)};
+  await setupCommand(root,join(import.meta.dirname,'../catalog'),{config:'input.json',yes:false,dryRun:false},{...ui,confirm:async message=>/direnv/.test(message)?false:true});
+  const text=out.join('\n');
+  assert.match(text,/Setup complete\./);
+  assert.match(text,/Before you start/);
+  assert.match(text,/Fill in GITHUB_TOKEN/);
+  assert.match(text,/Linear: sign in/);
+  assert.doesNotMatch(text,/NOT VERIFIED|identity|AGENTS_CLI_MCP_PROFILE/);
+  assert.deepEqual(setupNextSteps({pending:['[codex] linear: complete OAuth; functional tool call NOT VERIFIED.','[claude] linear: complete OAuth; functional tool call NOT VERIFIED.'],variables:[],direnv:true,engramMissing:true}),['Install engram and make sure it is on your PATH.','Linear: sign in with OAuth the first time your agent uses it.','Start your agent runtime in this project.']);
+});

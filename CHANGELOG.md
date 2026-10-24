@@ -12,6 +12,7 @@ and releases use semantic versioning.
 ## Unreleased
 
 - Add `agents-cli check [--json]` (read-only drift report, exit 1 on drift) and make `agents-cli update` apply the configured setup (`--yes`, `--dry-run`); edited files stay conflicts.
+- Interactive setup ends with `Setup complete.` and a short "Before you start" checklist; doctor warnings are no longer printed during setup (only real failures). `agents-cli doctor` still reports everything.
 
 ## 0.5.3 — prepared for release
 
