@@ -48,3 +48,12 @@ operation.
 `agents-cli import [--dry-run] [--json]` looks for project instructions that agents-cli did not create: `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.cursor/rules/*`, `.github/copilot-instructions.md`, and MCP server names already present in `.mcp.json`, `opencode.json(c)` and `.codex/config.toml`. It writes one managed index, `.agents/imported.md`, listing each file with its title and size. The installed agents are told to read that index first and follow the listed files' project conventions; the index states that they never override agents-cli safety rules.
 
 Nothing is copied: original files are never edited or deleted, instruction bodies stay in place, and MCP entries are reported by name only because commands and environment values can hold secrets. Files agents-cli manages are skipped. Re-run `import` after adding files; `uninstall` removes the index like any managed file.
+
+## Engram hooks (Claude Code)
+
+The `engram-session` skill asks agents to sync and save their Engram session, but a skill only works if the agent follows it. When the `engram` MCP is selected and the platform includes `claude`, setup also merges managed hooks into `.claude/settings.json` (disable with `"hooks": { "engram": false }` in `agents-cli.config.json`):
+
+- `Stop` runs `agents-cli hook engram-stop`. If the session used tools but never called `mem_session_summary`, it blocks the stop once and asks the agent to save the summary first. It never blocks twice in a row (`stop_hook_active`), never blocks a session that used no tools, and reads only real tool calls from the transcript.
+- `SessionStart` runs `engram context` to load recent memory. It is skipped when the Engram Claude Code plugin is enabled in your `~/.claude/settings.json`, because the plugin does that itself.
+
+Your own hooks and settings are preserved; only handlers with these exact commands are managed (recorded in `.agents/hooks-state-claude.json`), and `uninstall` removes only them. The Stop hook needs `agents-cli` on your `PATH` (`npm i -g @matiasnjacob/agents-cli`); `doctor` warns when it is missing. Other platforms are not enforced: they rely on the skill alone.

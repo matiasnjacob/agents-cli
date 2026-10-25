@@ -90,6 +90,15 @@
           "pi"
         ]
       }
+    },
+    "hooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "engram": {
+          "type": "boolean"
+        }
+      }
     }
   },
   "$defs": {

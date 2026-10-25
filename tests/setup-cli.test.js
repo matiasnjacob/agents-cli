@@ -334,3 +334,65 @@ test('import indexes unmanaged instructions and MCP names without copying conten
   const gone=await run(['uninstall','--yes']);
   assert.ok(gone.removed.includes('.agents/imported.md'));
 });
+
+test('engram stop hook blocks once when tools ran without a session summary',async()=>{
+  const {evaluateEngramStop,runEngramStopHook}=await import('../dist/hooks/engram-stop.js');
+  const line=(...blocks)=>JSON.stringify({type:'assistant',message:{content:blocks}});
+  const tool=line({type:'tool_use',id:'1',name:'Bash',input:{}}),summary=line({type:'tool_use',id:'2',name:'mcp__engram__mem_session_summary',input:{}});
+  const definitions=JSON.stringify({type:'system',tools:[{name:'mcp__engram__mem_session_summary',description:'tool_use'}]});
+  assert.equal(evaluateEngramStop({},`${definitions}\n${tool}`).decision,'block');
+  assert.equal(evaluateEngramStop({},tool).decision,'block');
+  assert.deepEqual(evaluateEngramStop({},line({type:'text',text:'hi'})),{});
+  assert.deepEqual(evaluateEngramStop({},`${tool}\n${summary}`),{});
+  assert.deepEqual(evaluateEngramStop({stop_hook_active:true},tool),{});
+  const dir=await mkdtemp(join(tmpdir(),'stop-hook-'));
+  await writeFile(join(dir,'t.jsonl'),tool);
+  assert.equal(JSON.parse(await runEngramStopHook(JSON.stringify({transcript_path:join(dir,'t.jsonl')}))).decision,'block');
+  assert.equal(await runEngramStopHook('not json'),'{}');
+  assert.equal(await runEngramStopHook(JSON.stringify({transcript_path:join(dir,'missing')})),'{}');
+});
+
+test('managed Claude hooks merge with user hooks, are idempotent, switchable and removed by uninstall',async()=>{
+  const {mkdir}=await import('node:fs/promises');
+  const home=await mkdtemp(join(tmpdir(),'home-')),root=await mkdtemp(join(tmpdir(),'setup-hooks-'));
+  const env={...process.env,HOME:home};
+  const run=async(args)=>JSON.parse((await exec(process.execPath,[cli,...args],{cwd:root,env})).stdout);
+  await mkdir(join(root,'.claude'),{recursive:true});
+  await writeFile(join(root,'.claude/settings.json'),JSON.stringify({permissions:{allow:['Bash(ls)']},hooks:{Stop:[{hooks:[{type:'command',command:'echo mine'}]}]}}));
+  const config={...fixture,mcps:['engram']};
+  await writeFile(join(root,'input.json'),JSON.stringify(config));
+  await run(['setup','--config','input.json','--yes']);
+  const read=async()=>JSON.parse(await readFile(join(root,'.claude/settings.json'),'utf8'));
+  let settings=await read();
+  assert.deepEqual(settings.permissions,{allow:['Bash(ls)']});
+  const commands=event=>settings.hooks[event].flatMap(g=>g.hooks.map(h=>h.command));
+  assert.deepEqual(commands('Stop'),['echo mine','agents-cli hook engram-stop']);
+  assert.match(commands('SessionStart')[0],/engram context/);
+  const before=await readFile(join(root,'.claude/settings.json'),'utf8');
+  await run(['setup','--config','input.json','--yes']);
+  assert.equal(await readFile(join(root,'.claude/settings.json'),'utf8'),before);
+  await writeFile(join(root,'input.json'),JSON.stringify({...config,hooks:{engram:false}}));
+  await run(['setup','--config','input.json','--yes']);
+  settings=await read();
+  assert.deepEqual(commands('Stop'),['echo mine']); assert.equal(settings.hooks.SessionStart,undefined);
+  await assert.rejects(readFile(join(root,'.agents/hooks-state-claude.json')),/ENOENT/);
+  await writeFile(join(root,'input.json'),JSON.stringify(config));
+  await run(['setup','--config','input.json','--yes']);
+  await run(['uninstall','--yes']);
+  settings=await read();
+  assert.deepEqual(commands('Stop'),['echo mine']); assert.deepEqual(settings.permissions,{allow:['Bash(ls)']});
+  assert.equal(settings.hooks.SessionStart,undefined);
+  await assert.rejects(readFile(join(root,'.agents/hooks-state-claude.json')),/ENOENT/);
+});
+
+test('session-start context hook is skipped when the Engram Claude plugin is enabled',async()=>{
+  const {prepareHooks}=await import('../dist/setup/hooks.js');
+  const home=await mkdtemp(join(tmpdir(),'home-plugin-')),root=await mkdtemp(join(tmpdir(),'hooks-plugin-'));
+  const {mkdir}=await import('node:fs/promises');
+  await mkdir(join(home,'.claude'),{recursive:true});
+  await writeFile(join(home,'.claude/settings.json'),JSON.stringify({enabledPlugins:{'engram@engram':true}}));
+  const config={platforms:['claude'],hooks:{engram:true}};
+  const settings=JSON.parse((await prepareHooks(root,config,home)).files.find(f=>f.path==='.claude/settings.json').content);
+  assert.deepEqual(Object.keys(settings.hooks),['Stop']);
+  assert.deepEqual(await prepareHooks(root,{platforms:['codex'],hooks:{engram:true}},home),{files:[],pending:[]});
+});

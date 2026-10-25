@@ -6,7 +6,8 @@ import type { Platform } from "./contract.js";
 import { LOCKFILE } from "./install/engine.js";
 import {resolveConfig,type Manifest} from './setup/config.js';
 import {prepareMcp} from './setup/mcp.js';
-import {direnvAvailable,envStatus} from './setup/env.js';
+import {direnvAvailable,envStatus,commandAvailable} from './setup/env.js';
+import {HOOKS_STATE_PATH} from './setup/hooks.js';
 import {createStyle,type Style} from './setup/ui.js';
 
 const execFileAsync = promisify(execFile);
@@ -54,6 +55,12 @@ async function setupChecks(options:DoctorOptions):Promise<Diagnostic[]> {
       checks.push({name:`env:${v.name}`,status:ok?'pass':'warn',message:v.inEnvironment?`${v.name} is set in the environment (${v.description}).`:v.inFile?`${v.name} has a value in .env; run direnv allow or export it so agents can see it.`:`${v.name} is empty or missing; fill it in .env (${v.description}).`});
     }
     if (variables.length) checks.push({name:'direnv',status:await direnvAvailable()?'pass':'warn',message:await direnvAvailable()?'direnv is installed; run direnv allow once in this project to load .env.':'direnv is not installed; install it (macOS: brew install direnv) so .env loads automatically.'});
+    if (config.platforms.includes('claude') && config.hooks.engram) {
+      let installed=true;
+      try {await access(join(options.root,HOOKS_STATE_PATH));} catch {installed=false;}
+      const cli=await commandAvailable('agents-cli');
+      checks.push({name:'hooks',status:installed&&cli?'pass':'warn',message:!installed?'Engram hooks are not installed; run agents-cli update.':cli?'Claude Code hooks enforce the Engram session summary.':'The Engram Stop hook needs `agents-cli` on your PATH (npm i -g @matiasnjacob/agents-cli); until then it cannot run.'});
+    }
     if (config.decisionSupport.mode!=='off') {
       checks.push({name:'jev-credentials',status:(options.env??process.env)[config.decisionSupport.apiKeyEnv]?'pass':'warn',message:(options.env??process.env)[config.decisionSupport.apiKeyEnv]?'Configured JEV credential variable is present; authentication NOT VERIFIED.':`Set ${config.decisionSupport.apiKeyEnv} in the runtime environment.`});
       checks.push({name:'jev-runtime',status:'warn',message:`JEV ${config.decisionSupport.mode} configured; live evaluation NOT VERIFIED. Run an explicit decision or dataset evaluation to check the API.`});

@@ -8,8 +8,8 @@ project agent prefixes and safe migration from 0.4.1. Version `0.5.0` adds multi
 Engram and QA evidence skills and the always-installed brainstorming skill. Version `0.5.1`
 shows a concise setup plan summary. Version `0.5.2`
 removes an accidental self-dependency. Version `0.5.3` adds `.env`/direnv
-setup and a readable `doctor` report. The next planned release is `0.6.0`, which
-adds `check`, a real `update`, external skill freshness, `uninstall` and `revert`. Releases install the
+setup and a readable `doctor` report. Version `0.6.0` adds
+`check`, a real `update`, external skill freshness, `uninstall` and `revert`. The next planned release is `0.7.0`, which adds `skills add owner/repo`, `import` and Engram hooks. Releases install the
 `agents-cli` executable and are published by `.github/workflows/release.yml`.
 GitHub Releases provide the `.tgz`, `SHA256SUMS` and build-provenance attestation.
 
@@ -96,7 +96,7 @@ gh workflow run release.yml --ref main -f release_tag=v0.4.0
 ## Current status
 
 The npm Trusted Publisher, v0.4.0 package and `v0.4.0` GitHub Release are
-published. This branch prepares v0.6.0; create and push its tag only after the
+published. This branch prepares v0.7.0; create and push its tag only after the
 change is merged. See the [integration validation record](integration-validation.md)
 for test evidence.
 

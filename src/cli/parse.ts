@@ -25,6 +25,7 @@ export type CommandResult =
   | { kind: "doctor"; json?: boolean }
   | { kind: "update"; dryRun: boolean; yes: boolean }
   | { kind: "check"; json: boolean }
+  | { kind: "hook"; name: "engram-stop" }
   | { kind: "import"; dryRun: boolean; json: boolean }
   | { kind: "uninstall"; dryRun: boolean; yes: boolean; json: boolean }
   | { kind: "revert"; id?: string; list: boolean; dryRun: boolean; yes: boolean; json: boolean };
@@ -178,6 +179,10 @@ export function parseCommandArgs(args: string[]): CommandResult {
     const extra = args.slice(1).filter((arg) => arg !== "--dry-run" && arg !== "--json");
     if (extra.length) return { kind: "error", message: `Unknown option '${extra[0]}'.` };
     return { kind: "import", dryRun: args.includes("--dry-run"), json: args.includes("--json") };
+  }
+  if (command === "hook") {
+    if (args.length === 2 && args[1] === "engram-stop") return { kind: "hook", name: "engram-stop" };
+    return { kind: "error", message: "Unknown hook; supported: engram-stop." };
   }
   if (command === "check") {
     const extra = args.slice(1).filter((arg) => arg !== "--json");

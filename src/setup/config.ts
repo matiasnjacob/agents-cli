@@ -21,6 +21,8 @@ export const brainstormingSkill: ExternalSkill = {id:'brainstorming',repository:
 export interface SetupConfig {
   schemaVersion: 1; platforms: Platform[]; suite: keyof typeof suites; agents: string[]; agentPrefix: string;
   tracker: Tracker; skills: SkillSelection[]; mcps: string[]; decisionSupport: DecisionConfig;
+  /** Claude Code hooks that enforce the Engram session contract; default on when the engram MCP is selected. */
+  hooks: {engram: boolean};
 }
 export interface Manifest {
   catalogVersion: string;
@@ -73,7 +75,7 @@ export function decisionConfig(value: unknown = {}): DecisionConfig {
 export function skillIds(config: SetupConfig): string[] { return config.skills.map(s=>typeof s==='string'?s:s.id); }
 export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
   const v=object(value,'setup config');
-  keys(v,['schemaVersion','platform','platforms','suite','agents','agentPrefix','tracker','skills','mcps','decisionSupport']);
+  keys(v,['schemaVersion','platform','platforms','suite','agents','agentPrefix','tracker','skills','mcps','decisionSupport','hooks']);
   if (v.schemaVersion!==1) throw new Error('schemaVersion must be 1.');
   if (v.platform!==undefined && v.platforms!==undefined) throw new Error('Use either platform or platforms, not both.');
   const rawPlatforms=v.platforms ?? (v.platform===undefined?undefined:[v.platform]);
@@ -108,5 +110,11 @@ export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
   if (mcps.some(id=>!['github','linear','trello','jev','engram'].includes(id))) throw new Error('Unknown MCP.');
   const decisionSupport=decisionConfig(v.decisionSupport);
   if (mcps.includes('jev') && decisionSupport.mode==='off') throw new Error('Enable decisionSupport before selecting jev MCP.');
-  return {schemaVersion:1,platforms,suite,agents,agentPrefix,tracker:v.tracker as Tracker,skills,mcps,decisionSupport};
+  let hooks={engram:mcps.includes('engram')};
+  if (v.hooks!==undefined) {
+    const h=object(v.hooks,'hooks'); keys(h,['engram']);
+    if (h.engram!==undefined && typeof h.engram!=='boolean') throw new Error('hooks.engram must be boolean.');
+    hooks={engram:h.engram ?? hooks.engram};
+  }
+  return {schemaVersion:1,platforms,suite,agents,agentPrefix,tracker:v.tracker as Tracker,skills,mcps,decisionSupport,hooks};
 }
