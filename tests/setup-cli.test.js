@@ -259,7 +259,7 @@ test('uninstall removes only managed files and MCP entries, keeps edits and secr
   await assert.rejects(access(join(root,'.claude/agents/code-reviewer.md')));
   await assert.rejects(access(join(root,'.codex/agents')));
   await assert.rejects(access(join(root,'.codex/skills')));
-  assert.doesNotMatch(await readFile(join(root,'.codex/config.toml'),'utf8'),/agents-cli/);
+  await assert.rejects(access(join(root,'.codex/config.toml')),/ENOENT/);
   assert.equal(await readFile(join(root,'.claude/agents/qa-manual.md'),'utf8'),'my edit');
   const mcp=JSON.parse(await readFile(join(root,'.mcp.json'),'utf8'));
   assert.deepEqual(Object.keys(mcp.mcpServers),['mine']);
@@ -457,4 +457,26 @@ test('init runs the setup engine with the same JSON summary and extends an exist
   await exec2(['init','--platform','claude','--tracker','linear','--yes']);
   await assert.rejects(exec2(['init','--platform','claude','--tracker','trello','--yes']),/differs from the configured tracker/);
   await assert.rejects(exec2(['init','--platform','claude','--tracker','linear','--skills','nope','--yes']),/Unknown skill/);
+});
+
+test('uninstall deletes MCP config files that only held agents-cli entries and keeps user content',async()=>{
+  const {mkdir,access}=await import('node:fs/promises');
+  const root=await mkdtemp(join(tmpdir(),'uninstall-empty-'));
+  const run=async(args)=>JSON.parse((await exec(process.execPath,[cli,...args],{cwd:root})).stdout);
+  await writeFile(join(root,'input.json'),JSON.stringify({...fixture,platform:undefined,platforms:['codex','claude'],mcps:['engram']}));
+  await run(['setup','--config','input.json','--yes']);
+  await access(join(root,'.codex/config.toml')); await access(join(root,'.mcp.json'));
+  await run(['uninstall','--yes']);
+  await assert.rejects(access(join(root,'.codex')),/ENOENT/);
+  await assert.rejects(access(join(root,'.mcp.json')),/ENOENT/);
+  const kept=await mkdtemp(join(tmpdir(),'uninstall-kept-'));
+  const runKept=async(args)=>JSON.parse((await exec(process.execPath,[cli,...args],{cwd:kept})).stdout);
+  await mkdir(join(kept,'.codex'),{recursive:true});
+  await writeFile(join(kept,'.codex/config.toml'),'model = "o3"\n');
+  await writeFile(join(kept,'.mcp.json'),JSON.stringify({mcpServers:{mine:{url:'https://mine.example'}}}));
+  await writeFile(join(kept,'input.json'),JSON.stringify({...fixture,platform:undefined,platforms:['codex','claude'],mcps:['engram']}));
+  await runKept(['setup','--config','input.json','--yes']);
+  await runKept(['uninstall','--yes']);
+  assert.equal(await readFile(join(kept,'.codex/config.toml'),'utf8').then(t=>t.trim()),'model = "o3"');
+  assert.deepEqual(Object.keys(JSON.parse(await readFile(join(kept,'.mcp.json'),'utf8')).mcpServers),['mine']);
 });

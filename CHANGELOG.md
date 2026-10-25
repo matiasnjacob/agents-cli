@@ -5,6 +5,12 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
+## 0.8.1 — prepared for release
+
+- README now documents every command, the Engram and QA skills, always-installed brainstorming, hooks, permission overrides and the lifecycle commands.
+- `uninstall` deletes MCP configuration files (such as `.codex/config.toml`) that only held agents-cli entries and keeps any file with user content.
+- Record the real-terminal and live Claude Code validation of 0.8.0 in `docs/integration-validation.md`.
+
 ## 0.8.0 — prepared for release
 
 - Add `agents-cli lint [--json]` and a catalog test: manifest sync, front matter, skill hashes, permission shape, agent/skill references and tool promises.

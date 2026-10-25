@@ -32,6 +32,14 @@ async function pruneEmptyDirs(root:string,paths:string[]):Promise<void> {
   }
 }
 
+function emptyConfig(content:string):boolean {
+  if (!content.trim()) return true;
+  try {
+    const parsed=JSON.parse(content) as unknown;
+    return !!parsed && typeof parsed==='object' && !Array.isArray(parsed) && Object.values(parsed).every(value=>value && typeof value==='object' && !Array.isArray(value) && !Object.keys(value).length);
+  } catch {return false;}
+}
+
 export async function uninstall(root:string,options:{dryRun:boolean;now?:Date}):Promise<UninstallReport> {
   const lockRaw=await optional(root,LOCKFILE);
   if (lockRaw===undefined) throw new Error(`Nothing to uninstall: ${LOCKFILE} not found.`);
@@ -44,7 +52,9 @@ export async function uninstall(root:string,options:{dryRun:boolean;now?:Date}):
       const prepared=await prepareMcp(root,{platform,mcps:[]});
       for (const file of prepared.files) {
         if (file.path===statePath) continue;
-        files.push({...file,content:file.content.replace(/\n*# agents-cli MCP begin\n# agents-cli MCP end\n?/,'\n')});
+        const content=file.content.replace(/\n*# agents-cli MCP begin\n# agents-cli MCP end\n?/,'\n');
+        // A configuration file that only held our entries goes away with them; any user content keeps it.
+        files.push(emptyConfig(content)?{path:file.path,content:'',remove:true}:{...file,content});
       }
       files.push({path:statePath,content:'',remove:true});
       mcp.push({platform,status:'removed'});
