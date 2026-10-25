@@ -5,6 +5,10 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
+## Unreleased
+
+- Add per-project `permissions` overrides per agent in `agents-cli.config.json`, applied by every adapter; narrowing is free, widening beyond the catalog default needs `allowPermissionWidening: true`; unknown names and invalid values are errors.
+
 ## 0.7.0 — prepared for release
 
 - Add managed Claude Code hooks that enforce the Engram session contract: a `Stop` hook (`agents-cli hook engram-stop`) that blocks once when tools ran without `mem_session_summary`, and a `SessionStart` context hook (skipped when the Engram plugin is enabled). Config `hooks.engram` (default on with the engram MCP); user hooks preserved; `uninstall` and `doctor` aware.

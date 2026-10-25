@@ -38,11 +38,13 @@ export async function executeSetup(root:string,catalogRoot:string,config:SetupCo
   return report;
 }
 
-export function formatSetupPreview(report:{config:Pick<SetupConfig,'suite'|'agents'> & ({platforms:SetupConfig['platforms']}|{platform:SetupConfig['platforms'][number]}) & Partial<Pick<SetupConfig,'agentPrefix'|'tracker'|'mcps'|'skills'|'decisionSupport'>>;creates:string[];updates:string[];removes:string[];conflicts:string[];unchanged?:string[]}):string {
+export function formatSetupPreview(report:{config:Pick<SetupConfig,'suite'|'agents'> & ({platforms:SetupConfig['platforms']}|{platform:SetupConfig['platforms'][number]}) & Partial<Pick<SetupConfig,'agentPrefix'|'tracker'|'mcps'|'skills'|'decisionSupport'|'permissions'>>;creates:string[];updates:string[];removes:string[];conflicts:string[];unchanged?:string[]}):string {
   const effectiveAgents=report.config.agents.map(id=>report.config.agentPrefix?`${report.config.agentPrefix}-${id}`:id);
   const selectedSkills=report.config.skills?.map(skill=>typeof skill==='string'?skill:`${skill.id} (${skill.repository}@${skill.revision.slice(0,7)}:${skill.path})`);
   const platforms='platforms' in report.config?report.config.platforms:[report.config.platform];
   const lines=[`Platforms: ${platforms.join(', ')}`,`Suite: ${report.config.suite}`,`Agents: ${effectiveAgents.join(', ')}`,`Tracker: ${report.config.tracker ?? 'not specified'}`,`MCPs: ${report.config.mcps?.join(', ') || 'none'}`,`Skills: ${selectedSkills?.join(', ') || 'none'}`,`JEV: ${report.config.decisionSupport?.mode ?? 'not specified'}`];
+  const overrides=Object.entries(report.config.permissions ?? {}).flatMap(([agent,changes])=>Object.entries(changes).map(([name,value])=>`${agent}.${name}=${typeof value==='string'?value:JSON.stringify(value)}`));
+  if (overrides.length) lines.push(`Permission overrides: ${overrides.join(', ')}`);
   for (const [action,paths] of [['CREATE',report.creates],['UPDATE',report.updates],['REMOVE',report.removes],['CONFLICT',report.conflicts]] as const) {
     lines.push(`${action} (${paths.length})`);
     lines.push(...(paths.length?paths.map(path=>`  ${action} ${path}`):['  (none)']));

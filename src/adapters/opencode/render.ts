@@ -2,12 +2,15 @@ import { readFile, readdir } from "node:fs/promises";
 import { basename, join } from "node:path";
 import type { InstallFile } from "../../install/engine.js";
 import { applyAgentPrefix } from "../agent-prefix.js";
+import { applyPermissionOverrides, type PermissionOverrides } from "../permissions.js";
 
 export interface OpenCodeRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
   selectedAgents?: string[];
   agentPrefix?: string;
+  permissionOverrides?: PermissionOverrides;
+  allowPermissionWidening?: boolean;
 }
 
 interface AgentSource {
@@ -23,7 +26,7 @@ export async function renderOpenCode(options: OpenCodeRenderOptions): Promise<In
   const allPaths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md")).sort();
   const paths = allPaths.filter((path) => !options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")));
   const skills = options.selectedSkills ?? [];
-  const agents = applyAgentPrefix(await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8")))),options.agentPrefix,allPaths.map(path=>basename(path,".md")));
+  const agents = applyAgentPrefix(applyPermissionOverrides(await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8")))),options.permissionOverrides,options.allowPermissionWidening),options.agentPrefix,allPaths.map(path=>basename(path,".md")));
   const files = agents.map((agent) => ({
     path: `.opencode/agents/${agent.id}.md`,
     content: renderAgent(agent, skills),

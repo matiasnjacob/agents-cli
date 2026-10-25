@@ -99,6 +99,41 @@
           "type": "boolean"
         }
       }
+    },
+    "permissions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z-]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": {
+          "oneOf": [
+            {
+              "enum": [
+                "allow",
+                "ask",
+                "deny"
+              ]
+            },
+            {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "enum": [
+                  "allow",
+                  "ask",
+                  "deny"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "allowPermissionWidening": {
+      "type": "boolean"
     }
   },
   "$defs": {

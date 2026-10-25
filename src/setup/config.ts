@@ -1,3 +1,4 @@
+import { parsePermissionOverrides, type PermissionOverrides } from '../adapters/permissions.js';
 import { supportedPlatforms, supportedTrackers, type Platform, type Tracker } from '../contract.js';
 
 export const suites = {
@@ -23,6 +24,8 @@ export interface SetupConfig {
   tracker: Tracker; skills: SkillSelection[]; mcps: string[]; decisionSupport: DecisionConfig;
   /** Claude Code hooks that enforce the Engram session contract; default on when the engram MCP is selected. */
   hooks: {engram: boolean};
+  /** Project overrides of the catalog permissions per agent; widening needs allowPermissionWidening. */
+  permissions: PermissionOverrides; allowPermissionWidening: boolean;
 }
 export interface Manifest {
   catalogVersion: string;
@@ -75,7 +78,7 @@ export function decisionConfig(value: unknown = {}): DecisionConfig {
 export function skillIds(config: SetupConfig): string[] { return config.skills.map(s=>typeof s==='string'?s:s.id); }
 export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
   const v=object(value,'setup config');
-  keys(v,['schemaVersion','platform','platforms','suite','agents','agentPrefix','tracker','skills','mcps','decisionSupport','hooks']);
+  keys(v,['schemaVersion','platform','platforms','suite','agents','agentPrefix','tracker','skills','mcps','decisionSupport','hooks','permissions','allowPermissionWidening']);
   if (v.schemaVersion!==1) throw new Error('schemaVersion must be 1.');
   if (v.platform!==undefined && v.platforms!==undefined) throw new Error('Use either platform or platforms, not both.');
   const rawPlatforms=v.platforms ?? (v.platform===undefined?undefined:[v.platform]);
@@ -116,5 +119,8 @@ export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
     if (h.engram!==undefined && typeof h.engram!=='boolean') throw new Error('hooks.engram must be boolean.');
     hooks={engram:h.engram ?? hooks.engram};
   }
-  return {schemaVersion:1,platforms,suite,agents,agentPrefix,tracker:v.tracker as Tracker,skills,mcps,decisionSupport,hooks};
+  const permissions=v.permissions===undefined?{}:parsePermissionOverrides(v.permissions);
+  for (const id of Object.keys(permissions)) if (!agents.includes(id)) throw new Error(`permissions refers to unselected agent '${id}'.`);
+  if (v.allowPermissionWidening!==undefined && typeof v.allowPermissionWidening!=='boolean') throw new Error('allowPermissionWidening must be boolean.');
+  return {schemaVersion:1,platforms,suite,agents,agentPrefix,tracker:v.tracker as Tracker,skills,mcps,decisionSupport,hooks,permissions,allowPermissionWidening:v.allowPermissionWidening===true};
 }
