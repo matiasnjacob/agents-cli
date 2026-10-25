@@ -90,15 +90,19 @@ Renders project roles in `.pi/agents/`, native Agent Skills in `.pi/skills/`, an
 
 ## Skills
 
-Skills are selected after the platform is resolved. The six portable skills in
+Skills are selected after the platform is resolved. The eight portable skills in
 the current catalog are:
 
 - `code-review-pr`
 - `developer-task-execution`
+- `engram-session` — every agent syncs its Engram memory session before work and saves it before reporting
 - `functional-review`
 - `git-feature-workflow`
 - `orchestrator-governance`
+- `qa-test-evidence` — QA agents generate test cases with JEV and record Playwright evidence
 - `worktree-task-isolation`
+
+`brainstorming` (from [skills.sh](https://skills.sh), `obra/superpowers`, pinned to a commit) is always installed for every agent and platform; `agents-cli skills update` moves its pin.
 
 The catalog also exposes `skills.sh` as an external source. External skills are downloaded only when selected in setup with an explicit GitHub repository, full commit SHA and skill path. The installer preserves text resources, records a license file and provenance, and never executes skill scripts. Project-scoped or
 private variants from the source machine are not copied into the portable
@@ -171,7 +175,7 @@ npm run build
 
 ## Quick start
 
-Run `agents-cli setup` for interactive platform, suite, MCP, skill and optional JEV selection. It writes a reproducible `agents-cli.config.json`. For automation, use `agents-cli setup --config <file> --yes`, or preview with `--dry-run`. See [interactive setup](docs/setup.md) and [JEV decision support](docs/jev.md).
+Run `agents-cli setup` for interactive selection of one or more platforms (for example Codex + Claude Code), suite, MCP integrations, skills and optional JEV. It shows progress, a short plan summary and a confirmation, then ends with `Setup complete.` and a checklist of what is left to do. It writes a reproducible `agents-cli.config.json`; when MCPs need credentials it also creates a `.env` with empty placeholders, a `.envrc` for direnv and a `.gitignore` entry (never overwriting existing values). For automation, use `agents-cli setup --config <file> --yes`, or preview with `--dry-run`. See [interactive setup](docs/setup.md) and [JEV decision support](docs/jev.md).
 
 
 Select the platform and tracker explicitly. `none` means no tracker is
@@ -192,7 +196,7 @@ agents-cli init --platform codex --tracker none --skills git-feature-workflow --
 agents-cli init --platform codex --tracker none --skills git-feature-workflow --yes
 ```
 
-The command is idempotent. Run it again to see unchanged files; local edits
+`init` runs the same engine non-interactively. The command is idempotent. Run it again to see unchanged files; local edits
 are reported as conflicts and are never silently discarded.
 
 ## Commands
@@ -201,27 +205,32 @@ are reported as conflicts and are never silently discarded.
 agents-cli --help
 agents-cli --version
 agents-cli setup [--config <file>] [--yes] [--dry-run]
+agents-cli init --platform <codex|opencode|claude|pi> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]
+agents-cli check [--json]
+agents-cli update [--dry-run] [--yes]
+agents-cli uninstall [--dry-run] [--yes] [--json]
+agents-cli revert [timestamp] [--list] [--dry-run] [--yes] [--json]
+agents-cli import [--dry-run] [--json]
+agents-cli doctor [--json]
+agents-cli lint [--json]
+agents-cli skills list --platform <codex|opencode|claude|pi>
+agents-cli skills add <id> --platform <codex|opencode|claude|pi> [--dry-run]
+agents-cli skills add <owner/repo> --path <dir> [--ref <sha|branch|tag>] [--id <id>] [--dry-run] [--yes]
+agents-cli skills update [id] [--dry-run] [--yes]
 agents-cli suites list
 agents-cli mcp list --platform <codex|opencode|claude|pi>
 agents-cli decision <tool> --input <file|-> [--config <file>]
 agents-cli decision mcp [--config <file>]
 agents-cli decision evaluate --dataset <file> --output <file> [--config <file>]
-agents-cli init --platform <codex|opencode|claude|pi> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]
-agents-cli skills list --platform <codex|opencode|claude|pi>
-agents-cli skills add <id> --platform <codex|opencode|claude|pi> [--dry-run]
-agents-cli doctor
-agents-cli update --dry-run
 ```
 
-`doctor` reports runtime, catalog, lockfile, platform, Docker MCP
-configuration and external actor diagnostics without printing credentials. A
-reachable Docker daemon does not by itself prove that a Linear or GitHub MCP
-tool call is authorized.
+`doctor` prints a readable report in a terminal (JSON with `--json` or when piped). It checks runtime, catalog, lockfile, platform, MCP configuration, the environment variables your MCPs need (set in the environment or filled in `.env`, never printed), direnv, the Engram hooks and external actor diagnostics. A reachable Docker daemon does not by itself prove that a Linear or GitHub MCP tool call is authorized.
 
-`update --dry-run` compares the installed platform and selected skills against
-the current catalog, then reports creates, updates, unchanged files and
-conflicts without writing. Applying updates is intentionally not available
-until explicit conflict-resolution semantics are added.
+**Lifecycle.** `check` is read-only and exits 1 when installed files drift from the catalog or have conflicts; it also reports pinned external skills that are behind upstream. `update` applies the configured setup again with the same plan and confirmation as `setup`. Locally edited files are never overwritten: they stay conflicts. `uninstall` removes only files whose hash still matches the lockfile and the MCP entries agents-cli owns (your own entries, `.env`, `.envrc` and `.gitignore` are untouched), after saving backups; `revert` restores a backup and itself backs up first.
+
+**Skills and existing projects.** `skills add owner/repo --path <dir>` pins any GitHub skill to a commit after the license, symlink and resource checks, and works with private repositories through your git credentials. `import` indexes an existing `AGENTS.md`, `CLAUDE.md`, Cursor rules or MCP server names into `.agents/imported.md` for the agents to read, without copying content or secrets.
+
+**Enforcement and control.** With the `engram` MCP on Claude Code, setup installs managed hooks: `Stop` blocks once when a session used tools but never saved its Engram summary, and `SessionStart` loads recent memory (skipped when the Engram plugin is enabled). Per-project `permissions` in `agents-cli.config.json` narrow (or, with `allowPermissionWidening`, widen) each agent's catalog permissions and are applied by every adapter. `lint` validates the catalog itself (manifest sync, front matter, hashes, permissions, skill references) and also runs in the test suite. Details: [setup](docs/setup.md), [update and lifecycle](docs/doctor-update.md).
 
 ## Worktrees and project workflows
 
