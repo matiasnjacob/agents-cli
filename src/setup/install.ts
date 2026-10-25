@@ -10,6 +10,7 @@ import type {Platform} from '../contract.js';
 import { skillIds, type SetupConfig } from './config.js';
 import {mcpCatalog,prepareMcp} from './mcp.js';
 import {resolveExternalSkill} from './external.js';
+import {prepareHooks} from './hooks.js';
 
 export type Progress=(message:string)=>void;
 
@@ -37,6 +38,8 @@ export async function prepareSetup(root:string,catalogRoot:string,config:SetupCo
     const prepared=await preparePlatform(root,catalogRoot,config,platform,progress);
     files.push(...prepared.files); pending.push(...prepared.pending); provenance.push(...prepared.provenance);
   }
+  const hooks=await prepareHooks(root,config);
+  files.push(...hooks.files); pending.push(...hooks.pending);
   if (provenance.length) files.push({path:'.agents/external-skills.json',content:JSON.stringify({schemaVersion:1,skills:provenance},null,2)+'\n'});
   let current:string|undefined;
   await assertNoSymlinks(root,'agents-cli.config.json');

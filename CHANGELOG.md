@@ -5,8 +5,9 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
-## Unreleased
+## 0.7.0 — prepared for release
 
+- Add managed Claude Code hooks that enforce the Engram session contract: a `Stop` hook (`agents-cli hook engram-stop`) that blocks once when tools ran without `mem_session_summary`, and a `SessionStart` context hook (skipped when the Engram plugin is enabled). Config `hooks.engram` (default on with the engram MCP); user hooks preserved; `uninstall` and `doctor` aware.
 - Add `agents-cli import [--dry-run] [--json]`: writes a managed `.agents/imported.md` index of existing AGENTS.md/CLAUDE.md/Cursor/Copilot instructions and MCP server names (no content or secrets copied); agents read it first.
 - Add `agents-cli skills add owner/repo --path <dir> [--ref] [--id] [--dry-run] [--yes]` to pin and install a skill from any GitHub repository with the existing license and resource checks.
 

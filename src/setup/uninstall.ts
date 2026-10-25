@@ -2,12 +2,13 @@ import {readFile,readdir,rmdir,unlink,stat} from 'node:fs/promises';
 import {dirname,join,relative} from 'node:path';
 import {applyInstall,planInstall,assertNoSymlinks,sha256,LOCKFILE,type InstallFile} from '../install/engine.js';
 import {prepareMcp} from './mcp.js';
+import {removeManagedHooks,HOOKS_STATE_PATH,SETTINGS_PATH} from './hooks.js';
 import {createStyle,type Style} from './ui.js';
 import {supportedPlatforms} from '../contract.js';
 
 const BACKUPS='.agents-cli-backups';
 /** Shared MCP configuration files are user-owned; they are cleaned through ownership state, never deleted. */
-const MCP_CONFIG_PATHS=new Set(['.mcp.json','opencode.json','opencode.jsonc','.codex/config.toml']);
+const MCP_CONFIG_PATHS=new Set(['.mcp.json','opencode.json','opencode.jsonc','.codex/config.toml',SETTINGS_PATH]);
 
 export interface UninstallReport {
   dryRun:boolean;
@@ -48,6 +49,9 @@ export async function uninstall(root:string,options:{dryRun:boolean;now?:Date}):
       files.push({path:statePath,content:'',remove:true});
       mcp.push({platform,status:'removed'});
     } catch {mcp.push({platform,status:'kept'});}
+  }
+  if (await optional(root,HOOKS_STATE_PATH)!==undefined) {
+    try {files.push(...(await removeManagedHooks(root)).files);} catch { /* settings edited into invalid JSON: leave hooks in place */ }
   }
   for (const path of Object.keys(lock.files)) {
     if (path===LOCKFILE || MCP_CONFIG_PATHS.has(path) || files.some(file=>file.path===path)) continue;

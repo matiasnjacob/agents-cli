@@ -1,6 +1,6 @@
 {
   "name": "@matiasnjacob/agents-cli",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Initialize projects with portable agent definitions and skills.",
   "repository": {
     "type": "git",
