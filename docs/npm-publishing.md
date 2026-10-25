@@ -9,7 +9,7 @@ Engram and QA evidence skills and the always-installed brainstorming skill. Vers
 shows a concise setup plan summary. Version `0.5.2`
 removes an accidental self-dependency. Version `0.5.3` adds `.env`/direnv
 setup and a readable `doctor` report. Version `0.6.0` adds
-`check`, a real `update`, external skill freshness, `uninstall` and `revert`. Version `0.7.0` adds `skills add owner/repo`, `import` and Engram hooks. Version `0.8.0` adds per-project permission overrides, `init` on the setup engine and catalog `lint`. The next planned release is `0.8.1`, which documents everything in the README and removes empty MCP config files on uninstall. Releases install the
+`check`, a real `update`, external skill freshness, `uninstall` and `revert`. Version `0.7.0` adds `skills add owner/repo`, `import` and Engram hooks. Version `0.8.0` adds per-project permission overrides, `init` on the setup engine and catalog `lint`. Version `0.8.1` documents everything in the README and removes empty MCP config files on uninstall. The next planned release is `0.8.2`, which makes decision support imply the `jev` MCP and its API key placeholder. Releases install the
 `agents-cli` executable and are published by `.github/workflows/release.yml`.
 GitHub Releases provide the `.tgz`, `SHA256SUMS` and build-provenance attestation.
 
@@ -96,7 +96,7 @@ gh workflow run release.yml --ref main -f release_tag=v0.4.0
 ## Current status
 
 The npm Trusted Publisher, v0.4.0 package and `v0.4.0` GitHub Release are
-published. This branch prepares v0.8.1; create and push its tag only after the
+published. This branch prepares v0.8.2; create and push its tag only after the
 change is merged. See the [integration validation record](integration-validation.md)
 for test evidence.
 

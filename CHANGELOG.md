@@ -5,7 +5,7 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
-## Unreleased
+## 0.8.2 — prepared for release
 
 - Decision support (`shadow`/`assist`) now implies the `jev` MCP on native platforms and always adds its API key variable to `.env`, including on Pi and when a config file did not list `jev`; `resolveConfig` no longer mutates its input.
 - Tidy the usage text: group commands logically and drop a stale `update --dry-run` line.
