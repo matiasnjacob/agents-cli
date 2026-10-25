@@ -25,6 +25,7 @@ export type CommandResult =
   | { kind: "doctor"; json?: boolean }
   | { kind: "update"; dryRun: boolean; yes: boolean }
   | { kind: "check"; json: boolean }
+  | { kind: "lint"; json: boolean }
   | { kind: "hook"; name: "engram-stop" }
   | { kind: "import"; dryRun: boolean; json: boolean }
   | { kind: "uninstall"; dryRun: boolean; yes: boolean; json: boolean }
@@ -48,6 +49,7 @@ export function usage(): string {
     "  agents-cli doctor [--json]",
     "  agents-cli update [--dry-run] [--yes]",
     "  agents-cli check [--json]",
+    "  agents-cli lint [--json]",
     "  agents-cli import [--dry-run] [--json]",
     "  agents-cli uninstall [--dry-run] [--yes] [--json]",
     "  agents-cli revert [timestamp] [--list] [--dry-run] [--yes] [--json]",
@@ -65,6 +67,7 @@ export function usage(): string {
     "  uninstall Remove managed files and MCP entries (edited files are kept).",
     "  revert    Restore files from a backup in .agents-cli-backups.",
     "  import    Index existing AGENTS.md/CLAUDE.md/Cursor rules and MCP server names for agents to read.",
+    "  lint      Validate the catalog: manifest sync, front matter, hashes, permissions, skill references.",
     "  check     Report drift between installed files and the catalog (exit 1 on drift).",
     "",
     "Options:",
@@ -183,6 +186,11 @@ export function parseCommandArgs(args: string[]): CommandResult {
   if (command === "hook") {
     if (args.length === 2 && args[1] === "engram-stop") return { kind: "hook", name: "engram-stop" };
     return { kind: "error", message: "Unknown hook; supported: engram-stop." };
+  }
+  if (command === "lint") {
+    const extra = args.slice(1).filter((arg) => arg !== "--json");
+    if (extra.length) return { kind: "error", message: `Unknown option '${extra[0]}'.` };
+    return { kind: "lint", json: args.includes("--json") };
   }
   if (command === "check") {
     const extra = args.slice(1).filter((arg) => arg !== "--json");

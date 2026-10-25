@@ -5,8 +5,9 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
-## Unreleased
+## 0.8.0 — prepared for release
 
+- Add `agents-cli lint [--json]` and a catalog test: manifest sync, front matter, skill hashes, permission shape, agent/skill references and tool promises.
 - `init` now runs the setup engine (same flags and JSON summary): it also installs required skills and brainstorming, writes `.env`/`.envrc` as needed and records `agents-cli.config.json`; an existing configuration is extended, never replaced.
 - Add per-project `permissions` overrides per agent in `agents-cli.config.json`, applied by every adapter; narrowing is free, widening beyond the catalog default needs `allowPermissionWidening: true`; unknown names and invalid values are errors.
 

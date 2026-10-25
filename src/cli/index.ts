@@ -19,6 +19,7 @@ import {mcpCatalog} from '../setup/mcp.js';
 import {createStyle} from '../setup/ui.js';
 import {resolveExternalSkill,resolveRevision} from '../setup/external.js';
 import {checkSetup,formatDrift,externalStatuses} from '../setup/lifecycle.js';
+import {lintCatalog,formatLint} from '../catalog/lint.js';
 import {runEngramStopHook} from '../hooks/engram-stop.js';
 import {importExisting,formatImport} from '../setup/import.js';
 import {uninstall,formatUninstall,revert,formatRevert,listBackups} from '../setup/uninstall.js';
@@ -77,6 +78,10 @@ try {
       const text = result.kind === "uninstall" ? formatUninstall(report as Awaited<ReturnType<typeof uninstall>>, createStyle()) : formatRevert(report as Awaited<ReturnType<typeof revert>>, createStyle());
       console.log(human ? text : JSON.stringify(report, null, 2));
     }
+  } else if (result.kind === "lint") {
+    const findings = await lintCatalog(catalogRoot);
+    console.log(result.json || !process.stdout.isTTY ? JSON.stringify({ ok: !findings.length, findings }, null, 2) : formatLint(findings));
+    if (findings.length) process.exitCode = 1;
   } else if (result.kind === "hook") {
     let stdin = "";
     for await (const chunk of process.stdin) stdin += chunk;
