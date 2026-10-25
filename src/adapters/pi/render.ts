@@ -3,12 +3,15 @@ import { basename, join } from "node:path";
 import type { InstallFile } from "../../install/engine.js";
 import { piSubagentExtension } from "./subagent-extension.js";
 import { applyAgentPrefix } from "../agent-prefix.js";
+import { applyPermissionOverrides, type PermissionOverrides } from "../permissions.js";
 
 export interface PiRenderOptions {
   catalogRoot: string;
   selectedSkills?: string[];
   selectedAgents?: string[];
   agentPrefix?: string;
+  permissionOverrides?: PermissionOverrides;
+  allowPermissionWidening?: boolean;
 }
 
 interface AgentSource {
@@ -23,7 +26,7 @@ export async function renderPi(options: PiRenderOptions): Promise<InstallFile[]>
   const allPaths = (await readdir(agentRoot)).filter((path) => path.endsWith(".md")).sort();
   const paths = allPaths.filter((path) => !options.selectedAgents || options.selectedAgents.includes(basename(path, ".md")));
   const skills = options.selectedSkills ?? [];
-  const agents = applyAgentPrefix(await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8")))),options.agentPrefix,allPaths.map(path=>basename(path,".md")));
+  const agents = applyAgentPrefix(applyPermissionOverrides(await Promise.all(paths.map(async (path) => parseAgent(path, await readFile(join(agentRoot, path), "utf8")))),options.permissionOverrides,options.allowPermissionWidening),options.agentPrefix,allPaths.map(path=>basename(path,".md")));
   const files: InstallFile[] = agents.map((agent) => ({
     path: `.pi/agents/${agent.id}.md`,
     content: renderAgent(agent, skills),

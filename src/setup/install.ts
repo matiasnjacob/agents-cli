@@ -17,7 +17,7 @@ export type Progress=(message:string)=>void;
 async function preparePlatform(root:string,catalogRoot:string,config:SetupConfig,platform:Platform,progress:Progress) {
   const render={codex:renderCodex,claude:renderClaude,opencode:renderOpenCode,pi:renderPi}[platform];
   progress(`${platform}: rendering agents and skills`);
-  const files=await render({catalogRoot,selectedAgents:config.agents,selectedSkills:skillIds(config),agentPrefix:config.agentPrefix,...(platform==='claude'?{selectedMcpServers:config.mcps.filter(id=>mcpCatalog.find(entry=>entry.id===id)?.platforms.includes('claude')).map(id=>`agents-cli-${id}`)}:{})});
+  const files=await render({catalogRoot,selectedAgents:config.agents,selectedSkills:skillIds(config),agentPrefix:config.agentPrefix,permissionOverrides:config.permissions,allowPermissionWidening:config.allowPermissionWidening,...(platform==='claude'?{selectedMcpServers:config.mcps.filter(id=>mcpCatalog.find(entry=>entry.id===id)?.platforms.includes('claude')).map(id=>`agents-cli-${id}`)}:{})});
   files.push(...await renderSkillFiles(catalogRoot,await readCatalog(catalogRoot),config.skills.filter((s):s is string=>typeof s==='string'),platform));
   const provenance=[];
   for (const source of config.skills) if (typeof source!=='string') {

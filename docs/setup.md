@@ -135,3 +135,20 @@ These files are written outside the managed-file lockfile and backups, so secret
 direnv is not installed silently. In an interactive terminal with Homebrew, setup asks before running `brew install direnv`; otherwise it prints the command. Hook direnv into your shell once (`eval "$(direnv hook zsh)"`) and run `direnv allow` in the project.
 
 `agents-cli doctor` prints a readable report in a terminal and checks each variable (set in the environment or filled in `.env`) and direnv without printing values. Use `agents-cli doctor --json`, or pipe the output, for JSON.
+
+## Per-project permission overrides
+
+Each catalog agent ships with default permissions (for example `bash: "ask"`). To change them for one project, add `permissions` to `agents-cli.config.json`, keyed by the canonical agent id (without any prefix):
+
+```json
+{
+  "permissions": {
+    "backend-developer": { "bash": "deny", "webfetch": "ask" },
+    "qa-manual": { "edit": { "*": "deny", "evidence/**": "allow" } }
+  }
+}
+```
+
+Values are `allow`, `ask`, `deny`, or a pattern map of those (paths, commands). Overrides are applied before rendering, so every platform adapter sees them (Claude tool lists, OpenCode/Codex metadata, Pi tool allowlists); `setup`, `update` and `check` all honor them, and the setup plan lists them under "Permission overrides".
+
+Narrowing is always allowed. An override that would let an agent do more than its catalog default for any pattern (for example `bash: "ask"` to `"allow"`) is rejected unless the config also sets `"allowPermissionWidening": true`, which makes the decision visible in the diff. Unknown permission names, unselected agents and invalid values are errors, so typos never silently do nothing.
