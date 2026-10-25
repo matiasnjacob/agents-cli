@@ -7,6 +7,7 @@ and releases use semantic versioning.
 
 ## Unreleased
 
+- `init` now runs the setup engine (same flags and JSON summary): it also installs required skills and brainstorming, writes `.env`/`.envrc` as needed and records `agents-cli.config.json`; an existing configuration is extended, never replaced.
 - Add per-project `permissions` overrides per agent in `agents-cli.config.json`, applied by every adapter; narrowing is free, widening beyond the catalog default needs `allowPermissionWidening: true`; unknown names and invalid values are errors.
 
 ## 0.7.0 — prepared for release

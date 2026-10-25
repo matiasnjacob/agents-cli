@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,writeFile,readdir,readFile} from 'node:fs/promises';
+import {mkdtemp,writeFile,readdir,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFile} from 'node:child_process';
@@ -431,4 +431,30 @@ test('permission overrides narrow freely, widen only when allowed, and reach eve
   await assert.rejects(executeSetup(await mkdtemp(join(tmpdir(),'setup-perms-')),catalogRoot,widening,true),/widen/);
   const allowed=resolveConfig({...base,allowPermissionWidening:true,permissions:{'backend-developer':{bash:'allow'}}},manifest);
   await executeSetup(await mkdtemp(join(tmpdir(),'setup-perms-')),catalogRoot,allowed,true);
+});
+
+test('init runs the setup engine with the same JSON summary and extends an existing configuration',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'init-alias-'));
+  const exec2=(args)=>exec(process.execPath,[cli,...args],{cwd:root});
+  const first=JSON.parse((await exec2(['init','--platform','codex','--tracker','none','--yes'])).stdout);
+  assert.deepEqual(Object.keys(first),['platform','tracker','dryRun','creates','updates','unchanged','conflicts']);
+  assert.equal(first.platform,'codex');
+  const config=JSON.parse(await readFile(join(root,'agents-cli.config.json'),'utf8'));
+  assert.deepEqual(config.platforms,['codex']); assert.equal(config.suite,'complete');
+  assert.ok(config.skills.some(s=>s.id==='brainstorming'));
+  assert.match(await readFile(join(root,'.codex/skills/brainstorming/SKILL.md'),'utf8'),/brainstorming/);
+  assert.match(await readFile(join(root,'.codex/skills/engram-session/SKILL.md'),'utf8'),/mem_context/);
+  const edited={...config,suite:'custom',agents:['code-reviewer'],agentPrefix:'acme',permissions:{'code-reviewer':{bash:'deny'}}};
+  await rm(join(root,'.codex'),{recursive:true,force:true});
+  await writeFile(join(root,'agents-cli.config.json'),JSON.stringify(edited));
+  await exec2(['init','--platform','claude','--tracker','none','--yes']);
+  const extended=JSON.parse(await readFile(join(root,'agents-cli.config.json'),'utf8'));
+  assert.deepEqual(extended.platforms,['codex','claude']);
+  assert.equal(extended.agentPrefix,'acme'); assert.deepEqual(extended.agents,['code-reviewer']); assert.deepEqual(extended.permissions,{'code-reviewer':{bash:'deny'}});
+  await readFile(join(root,'.claude/agents/acme-code-reviewer.md'),'utf8');
+  const again=JSON.parse((await exec2(['init','--platform','claude','--tracker','none','--yes'])).stdout);
+  assert.deepEqual([again.creates.length,again.updates.length],[0,0]);
+  await exec2(['init','--platform','claude','--tracker','linear','--yes']);
+  await assert.rejects(exec2(['init','--platform','claude','--tracker','trello','--yes']),/differs from the configured tracker/);
+  await assert.rejects(exec2(['init','--platform','claude','--tracker','linear','--skills','nope','--yes']),/Unknown skill/);
 });

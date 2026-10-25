@@ -152,3 +152,9 @@ Each catalog agent ships with default permissions (for example `bash: "ask"`). T
 Values are `allow`, `ask`, `deny`, or a pattern map of those (paths, commands). Overrides are applied before rendering, so every platform adapter sees them (Claude tool lists, OpenCode/Codex metadata, Pi tool allowlists); `setup`, `update` and `check` all honor them, and the setup plan lists them under "Permission overrides".
 
 Narrowing is always allowed. An override that would let an agent do more than its catalog default for any pattern (for example `bash: "ask"` to `"allow"`) is rejected unless the config also sets `"allowPermissionWidening": true`, which makes the decision visible in the diff. Unknown permission names, unselected agents and invalid values are errors, so typos never silently do nothing.
+
+## `init` is a non-interactive entry to the same engine
+
+`agents-cli init --platform <p> --tracker <t> [--skills a,b] [--yes] [--dry-run]` keeps its flags and its JSON summary, but now runs the setup engine with the `complete` suite. It therefore also installs the required and external skills (including `brainstorming`), writes `.env`/`.envrc` when MCP credentials are needed, and records `agents-cli.config.json`, so `check`, `update` and `uninstall` work afterwards.
+
+If the project already has an `agents-cli.config.json`, `init` extends it instead of replacing it: the platform is added, the requested skills are merged, and the suite, agents, prefix and permission overrides are kept. A different `--tracker` than the configured one is an error. Use `setup` for the interactive wizard.
