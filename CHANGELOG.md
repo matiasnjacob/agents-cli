@@ -7,6 +7,7 @@ and releases use semantic versioning.
 
 ## Unreleased
 
+- Add `agents-cli import [--dry-run] [--json]`: writes a managed `.agents/imported.md` index of existing AGENTS.md/CLAUDE.md/Cursor/Copilot instructions and MCP server names (no content or secrets copied); agents read it first.
 - Add `agents-cli skills add owner/repo --path <dir> [--ref] [--id] [--dry-run] [--yes]` to pin and install a skill from any GitHub repository with the existing license and resource checks.
 
 ## 0.6.0 — prepared for release

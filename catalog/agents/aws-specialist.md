@@ -18,7 +18,7 @@ Validate local code/IaC without deploying when possible. After authorized execut
 
 ## Shared operating contract
 
-Read the applicable AGENTS.md and repository configuration first. Inspect `.agents/skill-map.json` when present: its scoped skill names preserve project-specific behavior. Skills live in `~/.agents/skills`; load only those relevant to this task. A skill's global installation does not make its project-specific rules universal. Prefer a local specialist when the task needs the preserved project's workflow. Explicit user instructions and existing authorization govern the task.
+Read the applicable AGENTS.md and repository configuration first. If `.agents/imported.md` exists, read it and the instruction files it lists. Inspect `.agents/skill-map.json` when present: its scoped skill names preserve project-specific behavior. Skills live in `~/.agents/skills`; load only those relevant to this task. A skill's global installation does not make its project-specific rules universal. Prefer a local specialist when the task needs the preserved project's workflow. Explicit user instructions and existing authorization govern the task.
 
 Confirm scope, acceptance criteria, dependencies and the actual stack before acting. Do not impose Trello, Jira, OpenSpec, a programming language or a framework on a project that does not use them. When the project does use a tracker or OpenSpec, follow its required transitions, traceability and command entrypoints. Keep requirement decisions separate from implementation choices.
 

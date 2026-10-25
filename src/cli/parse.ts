@@ -25,6 +25,7 @@ export type CommandResult =
   | { kind: "doctor"; json?: boolean }
   | { kind: "update"; dryRun: boolean; yes: boolean }
   | { kind: "check"; json: boolean }
+  | { kind: "import"; dryRun: boolean; json: boolean }
   | { kind: "uninstall"; dryRun: boolean; yes: boolean; json: boolean }
   | { kind: "revert"; id?: string; list: boolean; dryRun: boolean; yes: boolean; json: boolean };
 
@@ -46,6 +47,7 @@ export function usage(): string {
     "  agents-cli doctor [--json]",
     "  agents-cli update [--dry-run] [--yes]",
     "  agents-cli check [--json]",
+    "  agents-cli import [--dry-run] [--json]",
     "  agents-cli uninstall [--dry-run] [--yes] [--json]",
     "  agents-cli revert [timestamp] [--list] [--dry-run] [--yes] [--json]",
     "  agents-cli skills update [id] [--dry-run] [--yes]",
@@ -61,6 +63,7 @@ export function usage(): string {
     "  update    Apply the configured setup again, or preview it with --dry-run.",
     "  uninstall Remove managed files and MCP entries (edited files are kept).",
     "  revert    Restore files from a backup in .agents-cli-backups.",
+    "  import    Index existing AGENTS.md/CLAUDE.md/Cursor rules and MCP server names for agents to read.",
     "  check     Report drift between installed files and the catalog (exit 1 on drift).",
     "",
     "Options:",
@@ -170,6 +173,11 @@ export function parseCommandArgs(args: string[]): CommandResult {
     if (ids.length > 1) return { kind: "error", message: "revert takes at most one backup id." };
     const common = { dryRun: args.includes("--dry-run"), yes: args.includes("--yes"), json: args.includes("--json") };
     return command === "uninstall" ? { kind: "uninstall", ...common } : { kind: "revert", ...(ids[0] ? { id: ids[0] } : {}), list: args.includes("--list"), ...common };
+  }
+  if (command === "import") {
+    const extra = args.slice(1).filter((arg) => arg !== "--dry-run" && arg !== "--json");
+    if (extra.length) return { kind: "error", message: `Unknown option '${extra[0]}'.` };
+    return { kind: "import", dryRun: args.includes("--dry-run"), json: args.includes("--json") };
   }
   if (command === "check") {
     const extra = args.slice(1).filter((arg) => arg !== "--json");

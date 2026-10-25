@@ -305,3 +305,32 @@ test('skills add owner/repo pins a resolved commit, validates the skill and appl
   await assert.rejects(exec(process.execPath,[cli,'skills','add','acme/tools','--path','skills/missing','--yes'],{cwd:root,env}),/Could not resolve external skill/);
   await assert.rejects(exec(process.execPath,[cli,'skills','add','acme/tools','--path','skills/hello','--ref','nope','--dry-run'],{cwd:root,env}),/Could not resolve/);
 });
+
+test('import indexes unmanaged instructions and MCP names without copying content or secrets',async()=>{
+  const {mkdir}=await import('node:fs/promises');
+  const root=await mkdtemp(join(tmpdir(),'setup-import-'));
+  const run=async(args)=>JSON.parse((await exec(process.execPath,[cli,...args],{cwd:root})).stdout);
+  const empty=await run(['import']);
+  assert.equal(empty.written,false); await assert.rejects(readFile(join(root,'.agents/imported.md')),/ENOENT/);
+  await writeFile(join(root,'AGENTS.md'),'# Team conventions\nNever use tabs. SECRET_INSTRUCTION_BODY');
+  await mkdir(join(root,'.cursor/rules'),{recursive:true});
+  await writeFile(join(root,'.cursor/rules/style.mdc'),'---\n---\nPrefer small functions');
+  await writeFile(join(root,'.mcp.json'),JSON.stringify({mcpServers:{mine:{command:'x',env:{TOKEN:'sk-very-secret'}}}}));
+  await writeFile(join(root,'input.json'),JSON.stringify(fixture));
+  await run(['setup','--config','input.json','--yes']);
+  const originals=await Promise.all(['AGENTS.md','.cursor/rules/style.mdc'].map(p=>readFile(join(root,p),'utf8')));
+  const dry=await run(['import','--dry-run']);
+  assert.equal(dry.written,false); await assert.rejects(readFile(join(root,'.agents/imported.md')),/ENOENT/);
+  const report=await run(['import']);
+  assert.deepEqual(report.instructionFiles.map(f=>f.path),['AGENTS.md','.cursor/rules/style.mdc']);
+  assert.deepEqual(report.mcpServers,[{file:'.mcp.json',name:'mine'}]);
+  assert.equal(report.written,true);
+  const doc=await readFile(join(root,'.agents/imported.md'),'utf8');
+  assert.match(doc,/AGENTS\.md.*Team conventions/); assert.match(doc,/never override agents-cli safety rules/i);
+  assert.doesNotMatch(doc,/SECRET_INSTRUCTION_BODY|sk-very-secret|CLAUDE\.md/);
+  assert.deepEqual(await Promise.all(['AGENTS.md','.cursor/rules/style.mdc'].map(p=>readFile(join(root,p),'utf8'))),originals);
+  assert.equal((await run(['import'])).written,false);
+  assert.match(await readFile(join(root,'.claude/agents/code-reviewer.md'),'utf8'),/\.agents\/imported\.md/);
+  const gone=await run(['uninstall','--yes']);
+  assert.ok(gone.removed.includes('.agents/imported.md'));
+});

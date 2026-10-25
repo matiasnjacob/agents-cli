@@ -42,3 +42,9 @@ operation.
 ## Skills from any repository
 
 `agents-cli skills add owner/repo --path <dir> [--ref <sha|branch|tag>] [--id <id>] [--dry-run] [--yes]` adds a skill from a GitHub repository to the configured setup. The ref (default: the repository's default branch) is resolved to a full commit SHA and pinned in `agents-cli.config.json`. The skill is staged first with the same checks as other external skills: it needs a license file and text-only resources, and symlinks, `.git` content and oversized skills are rejected. `--dry-run` prints the resolved commit, file count, license and a GitHub link to review the content; skills are executable instructions, so review them before applying. The id defaults to the directory name and cannot clash with catalog skills. If you cancel or the plan has conflicts, the config is restored. Catalog skills still use `skills add <id> --platform <p>`.
+
+## Importing existing configuration
+
+`agents-cli import [--dry-run] [--json]` looks for project instructions that agents-cli did not create: `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `.cursor/rules/*`, `.github/copilot-instructions.md`, and MCP server names already present in `.mcp.json`, `opencode.json(c)` and `.codex/config.toml`. It writes one managed index, `.agents/imported.md`, listing each file with its title and size. The installed agents are told to read that index first and follow the listed files' project conventions; the index states that they never override agents-cli safety rules.
+
+Nothing is copied: original files are never edited or deleted, instruction bodies stay in place, and MCP entries are reported by name only because commands and environment values can hold secrets. Files agents-cli manages are skipped. Re-run `import` after adding files; `uninstall` removes the index like any managed file.
