@@ -480,3 +480,22 @@ test('uninstall deletes MCP config files that only held agents-cli entries and k
   assert.equal(await readFile(join(kept,'.codex/config.toml'),'utf8').then(t=>t.trim()),'model = "o3"');
   assert.deepEqual(Object.keys(JSON.parse(await readFile(join(kept,'.mcp.json'),'utf8')).mcpServers),['mine']);
 });
+
+test('decision support implies the jev MCP on native platforms and always its API key variable',async()=>{
+  const {resolveConfig}=await import('../dist/setup/config.js');
+  const {requiredEnv}=await import('../dist/setup/env.js');
+  const {usage}=await import('../dist/cli/parse.js');
+  const catalogRoot=join(import.meta.dirname,'../catalog');
+  const manifest=JSON.parse(await readFile(join(catalogRoot,'manifest.json'),'utf8'));
+  const input={schemaVersion:1,platforms:['claude'],suite:'review-qa',tracker:'none',mcps:['engram'],decisionSupport:{mode:'assist'}};
+  const native=resolveConfig(input,manifest);
+  assert.deepEqual(native.mcps,['engram','jev']); assert.deepEqual(input.mcps,['engram']);
+  assert.deepEqual(requiredEnv(native).map(v=>v.name),['TYPESAFE_API_KEY']);
+  const pi=resolveConfig({...input,platforms:['pi']},manifest);
+  assert.deepEqual(pi.mcps,['engram']);
+  assert.deepEqual(requiredEnv(pi).map(v=>v.name),['TYPESAFE_API_KEY']);
+  assert.deepEqual(requiredEnv(resolveConfig({...input,decisionSupport:{mode:'off'}},manifest)),[]);
+  const text=usage();
+  assert.doesNotMatch(text,/agents-cli update --dry-run\n/);
+  for (const command of ['check','uninstall','revert','import','lint','skills update','skills add <owner/repo>']) assert.ok(text.includes(`agents-cli ${command}`),command);
+});

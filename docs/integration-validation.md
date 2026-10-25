@@ -56,3 +56,18 @@ Run against the published `@matiasnjacob/agents-cli@0.8.0` installed into a temp
 | `uninstall` leaves no empty MCP config file | Fixed in 0.8.1 | a `.codex/config.toml` created only for agents-cli entries is now removed; files with user content are kept |
 
 Not covered: Windows paths and shells, Codex/OpenCode/Pi runtime enforcement of the generated permissions (only Claude Code was exercised live), and hooks on non-Claude platforms (not implemented).
+
+### Realistic existing-project run (0.8.1, 2026-10-25)
+
+Published `@matiasnjacob/agents-cli@0.8.1` in a temporary directory over a project that already had `AGENTS.md`, a Cursor rule, an `.mcp.json` with a user server and a secret, a `.claude/settings.json` with a user `Stop` hook and permissions, a `.env` with values and a `.gitignore`.
+
+| Check | Result |
+| --- | --- |
+| `import` indexes the instruction files and the MCP server name only | Passed; the secret never appears in the index |
+| `setup` (Claude + Codex, GitHub + Engram) preserves user content | Passed: user MCP server, permissions, user `Stop` hook and existing `.env` values intact; `.env` placeholders only for missing keys |
+| A real Claude Code `code-reviewer` session follows the imported conventions | Passed: it read `AGENTS.md`, `.agents/imported.md` and the Cursor rule and reported the `[ACME-PINEAPPLE]` commit convention |
+| User and managed `Stop` hooks coexist in a live session | Passed: the user hook ran on both stops, the managed hook blocked once |
+| `check`/`update` idempotent; no secret outside `.env` and the user's own `.mcp.json` | Passed |
+| `uninstall` returns user files to their original content | Passed semantically; `.envrc` and the `.env` line in `.gitignore` remain by design, and `settings.json` keeps equivalent JSON with different whitespace in the `hooks` block |
+
+Findings fixed afterwards: decision support did not add the `jev` MCP or its API key placeholder for config-file setups and Pi, and the usage text kept a stale line.

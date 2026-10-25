@@ -20,7 +20,8 @@ export interface EnvPlan {
 export function requiredEnv(config:Pick<SetupConfig,'mcps'|'decisionSupport'>):EnvVariable[] {
   const variables:EnvVariable[]=[];
   if (config.mcps.includes('github')) variables.push({name:'GITHUB_TOKEN',description:'GitHub MCP: personal access token'});
-  if (config.mcps.includes('jev') && config.decisionSupport.mode!=='off') variables.push({name:config.decisionSupport.apiKeyEnv,description:'JEV decision support: TypeSafe API key'});
+  // JEV needs its key whenever decision support is on: through the MCP server, or the CLI on Pi and in scripts.
+  if (config.decisionSupport.mode!=='off') variables.push({name:config.decisionSupport.apiKeyEnv,description:'JEV decision support: TypeSafe API key'});
   return variables;
 }
 

@@ -110,3 +110,7 @@ References: [API](https://docs.typesafe.ai/api),
 [confidence](https://docs.typesafe.ai/confidence),
 [models](https://docs.typesafe.ai/models),
 [known limitations](https://docs.typesafe.ai/model-jaggedness/jev-1.13).
+
+## Decision support implies its MCP server and API key
+
+When `decisionSupport.mode` is `shadow` or `assist`, setup adds the `jev` MCP server on every native platform (Codex, OpenCode, Claude Code) even if a configuration file did not list it, because the QA skills require the tools. Pi uses the `agents-cli decision` CLI instead. On every platform the API key variable (`TYPESAFE_API_KEY` by default) is added to `.env` as an empty placeholder.
