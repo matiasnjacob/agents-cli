@@ -57,3 +57,9 @@ The `engram-session` skill asks agents to sync and save their Engram session, bu
 - `SessionStart` runs `engram context` to load recent memory. It is skipped when the Engram Claude Code plugin is enabled in your `~/.claude/settings.json`, because the plugin does that itself.
 
 Your own hooks and settings are preserved; only handlers with these exact commands are managed (recorded in `.agents/hooks-state-claude.json`), and `uninstall` removes only them. The Stop hook needs `agents-cli` on your `PATH` (`npm i -g @matiasnjacob/agents-cli`); `doctor` warns when it is missing. Other platforms are not enforced: they rely on the skill alone.
+
+## Catalog lint
+
+`agents-cli lint [--json]` validates the catalog shipped with the CLI (or the one at `AGENTS_CLI_CATALOG_ROOT`) and exits 1 on any finding. It is also a test in the suite, so CI fails when a catalog change breaks a rule. Rules: `agent-manifest-sync` and `skill-manifest-sync` (files and `manifest.json` agree both ways), `agent-front-matter` and `skill-front-matter` (description and permission parse; the skill `name` equals its id; the description is long enough to trigger it), `skill-hash` (skill contents match `sourceSha256`), `required-skills-exist` and `required-skills-loaded` (each required skill is in the catalog and named in the agent's instructions), `permission-shape` and `agent-references` (permission values are valid; task targets exist), and `tool-promise` (an agent is not told to use a tool its permissions deny).
+
+After editing a skill, recompute its hash: `sourceSha256` is the SHA-256 of the skill directory's file contents concatenated in sorted path order. Agent `sourceSha256` values record the upstream source and are not verified.
