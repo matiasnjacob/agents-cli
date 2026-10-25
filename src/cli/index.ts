@@ -56,7 +56,7 @@ try {
   else if (result.kind === "skills-add-external") await addExternalSkill(result, catalogRoot);
   else if (result.kind === "skills-update") await updateExternalSkills(result.id, result.dryRun, result.yes, catalogRoot);
   else if (result.kind === "skills-add") await addSkill(result.platform,result.skill,result.dryRun,catalogRoot);
-  else if (result.kind === "init") await install(result.config.platform, result.config.tracker, result.config.skills, result.config.dryRun, catalogRoot, true);
+  else if (result.kind === "init") await initAsSetup(result.config, catalogRoot);
   else if (result.kind === "doctor") {
     const report = await runDoctor({ root: process.cwd(), catalogRoot });
     console.log(result.json || !process.stdout.isTTY ? JSON.stringify(report, null, 2) : formatDoctorReport(report, createStyle()));
@@ -110,7 +110,7 @@ try {
 async function update(catalogRoot: string): Promise<void> {
   const root = process.cwd();
   const configured=await readSetupConfig(root,catalogRoot);
-  if (configured) { console.log(JSON.stringify(await executeSetup(root,catalogRoot,configured,true),null,2)); return; }
+  if (configured) { console.log(JSON.stringify({ platform: configured.platforms[0], ...await executeSetup(root,catalogRoot,configured,true) },null,2)); return; }
   const installed = await detectPlatform(root);
   if (!installed) throw new Error("No platform manifest found; run init before update --dry-run.");
   const manifest = await readCatalog(catalogRoot);
@@ -218,4 +218,21 @@ async function addExternalSkill(request: { repository: string; path: string; ref
   const { report, human } = await applyConfigEdit(file, original, config, request.yes, catalogRoot);
   if (human) console.log(`Added ${id} (${summary.files} files, ${summary.license}). Skills are executable instructions: review ${review}`);
   else console.log(JSON.stringify({ dryRun: false, added: true, skill: summary, review, report }, null, 2));
+}
+
+/**
+ * `init` keeps its flags and JSON summary but runs the setup engine, so it also installs required skills,
+ * brainstorming, MCP/env files and records agents-cli.config.json. An existing configuration is extended,
+ * never replaced, so a prior setup's suite, prefix and permissions survive.
+ */
+async function initAsSetup(request: { platform: Platform; tracker: string; skills: string[]; dryRun: boolean }, catalogRoot: string) {
+  const root = process.cwd();
+  const manifest = await readCatalog(catalogRoot) as Manifest;
+  const existing = await readSetupConfig(root, catalogRoot);
+  if (existing && existing.tracker !== "none" && existing.tracker !== request.tracker) throw new Error(`init --tracker ${request.tracker} differs from the configured tracker '${existing.tracker}'; edit agents-cli.config.json instead.`);
+  const config = existing
+    ? resolveConfig({ ...existing, platforms: [...new Set([...existing.platforms, request.platform])], tracker: existing.tracker === "none" ? request.tracker : existing.tracker, skills: [...existing.skills, ...request.skills.filter((id) => !existing.skills.some((skill) => (typeof skill === "string" ? skill : skill.id) === id))] }, manifest)
+    : resolveConfig({ schemaVersion: 1, platform: request.platform, suite: "complete", tracker: request.tracker, skills: request.skills }, manifest);
+  const report = await executeSetup(root, catalogRoot, config, request.dryRun);
+  console.log(JSON.stringify({ platform: request.platform, tracker: request.tracker, dryRun: request.dryRun, creates: report.creates, updates: report.updates, unchanged: report.unchanged, conflicts: report.conflicts }, null, 2));
 }
