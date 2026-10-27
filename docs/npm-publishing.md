@@ -96,7 +96,7 @@ gh workflow run release.yml --ref main -f release_tag=v0.4.0
 ## Current status
 
 The npm Trusted Publisher, v0.4.0 package and `v0.4.0` GitHub Release are
-published. This branch prepares v0.8.2; create and push its tag only after the
+published. This branch prepares v0.9.0; create and push its tag only after the
 change is merged. See the [integration validation record](integration-validation.md)
 for test evidence.
 
