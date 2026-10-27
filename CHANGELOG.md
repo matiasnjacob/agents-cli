@@ -11,6 +11,11 @@ and releases use semantic versioning.
 - Reword two catalog agent sentences (the optional `.agents/imported.md` index and the temporary-directory rule) so third-party markdown graph tools do not read them as broken file links.
 - Document how to inspect an installed harness with skill-map in `docs/map.md`.
 
+## 0.8.2 — prepared for release
+
+- Decision support (`shadow`/`assist`) now implies the `jev` MCP on native platforms and always adds its API key variable to `.env`, including on Pi and when a config file did not list `jev`; `resolveConfig` no longer mutates its input.
+- Tidy the usage text: group commands logically and drop a stale `update --dry-run` line.
+
 ## 0.8.1 — prepared for release
 
 - README now documents every command, the Engram and QA skills, always-installed brainstorming, hooks, permission overrides and the lifecycle commands.

@@ -109,10 +109,12 @@ export function resolveConfig(value: unknown, manifest: Manifest): SetupConfig {
     if (!manifest.skills.some(s=>s.id===id)) throw new Error(`Missing required skill in catalog: ${id}`);
     if (!ids.includes(id)) { skills.push(id); ids.push(id); }
   }
-  const mcps=strings(v.mcps ?? [],'mcps');
+  const mcps=[...strings(v.mcps ?? [],'mcps')];
   if (mcps.some(id=>!['github','linear','trello','jev','engram'].includes(id))) throw new Error('Unknown MCP.');
   const decisionSupport=decisionConfig(v.decisionSupport);
   if (mcps.includes('jev') && decisionSupport.mode==='off') throw new Error('Enable decisionSupport before selecting jev MCP.');
+  // Decision support without its MCP server would leave agents without the tools the QA skills require.
+  if (decisionSupport.mode!=='off' && platforms.some(p=>p!=='pi') && !mcps.includes('jev')) mcps.push('jev');
   let hooks={engram:mcps.includes('engram')};
   if (v.hooks!==undefined) {
     const h=object(v.hooks,'hooks'); keys(h,['engram']);
