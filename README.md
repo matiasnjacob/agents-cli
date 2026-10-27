@@ -211,6 +211,7 @@ agents-cli update [--dry-run] [--yes]
 agents-cli uninstall [--dry-run] [--yes] [--json]
 agents-cli revert [timestamp] [--list] [--dry-run] [--yes] [--json]
 agents-cli import [--dry-run] [--json]
+agents-cli map [--format <text|mermaid|dot|json>] [--platform <codex|opencode|claude|pi>]
 agents-cli doctor [--json]
 agents-cli lint [--json]
 agents-cli skills list --platform <codex|opencode|claude|pi>
@@ -231,6 +232,8 @@ agents-cli decision evaluate --dataset <file> --output <file> [--config <file>]
 **Skills and existing projects.** `skills add owner/repo --path <dir>` pins any GitHub skill to a commit after the license, symlink and resource checks, and works with private repositories through your git credentials. `import` indexes an existing `AGENTS.md`, `CLAUDE.md`, Cursor rules or MCP server names into `.agents/imported.md` for the agents to read, without copying content or secrets.
 
 **Enforcement and control.** With the `engram` MCP on Claude Code, setup installs managed hooks: `Stop` blocks once when a session used tools but never saved its Engram summary, and `SessionStart` loads recent memory (skipped when the Engram plugin is enabled). Per-project `permissions` in `agents-cli.config.json` narrow (or, with `allowPermissionWidening`, widen) each agent's catalog permissions and are applied by every adapter. `lint` validates the catalog itself (manifest sync, front matter, hashes, permissions, skill references) and also runs in the test suite. Details: [setup](docs/setup.md), [update and lifecycle](docs/doctor-update.md).
+
+**Map.** `map` is read-only and shows what is installed: agents, the skills each one refers to, the MCP servers agents-cli owns, the managed hooks, and an approximate token weight per file (about 4 bytes per token). It reports broken links, such as a skill listed in the manifest but missing on disk, or an agent that refers to a catalog skill that is not installed. It prints a summary in a terminal and JSON when piped; `--format mermaid` or `dot` emits a diagram you can paste into any Mermaid or Graphviz viewer. User hooks and MCP commands are never read. See [map](docs/map.md), which also covers inspecting the installed harness with the third-party skill-map viewer.
 
 ## Worktrees and project workflows
 

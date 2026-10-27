@@ -27,6 +27,7 @@ export type CommandResult =
   | { kind: "check"; json: boolean }
   | { kind: "lint"; json: boolean }
   | { kind: "hook"; name: "engram-stop" }
+  | { kind: "map"; format: "text" | "mermaid" | "dot" | "json"; platform?: Platform }
   | { kind: "import"; dryRun: boolean; json: boolean }
   | { kind: "uninstall"; dryRun: boolean; yes: boolean; json: boolean }
   | { kind: "revert"; id?: string; list: boolean; dryRun: boolean; yes: boolean; json: boolean };
@@ -39,6 +40,9 @@ export function usage(): string {
     "  agents-cli setup [--config <file>] [--yes] [--dry-run]",
     "  agents-cli init --platform <codex|opencode|claude|pi> --tracker <linear|trello|none> [--skills <id,id>] [--yes] [--dry-run]",
     "  agents-cli check [--json]",
+    "  agents-cli lint [--json]",
+    "  agents-cli import [--dry-run] [--json]",
+    "  agents-cli map [--format <text|mermaid|dot|json>] [--platform <codex|opencode|claude|pi>]",
     "  agents-cli update [--dry-run] [--yes]",
     "  agents-cli uninstall [--dry-run] [--yes] [--json]",
     "  agents-cli revert [timestamp] [--list] [--dry-run] [--yes] [--json]",
@@ -65,6 +69,7 @@ export function usage(): string {
     "  update    Apply the configured setup again, or preview it with --dry-run.",
     "  uninstall Remove managed files and MCP entries (edited files are kept).",
     "  revert    Restore files from a backup in .agents-cli-backups.",
+    "  map       Show installed agents, skills, MCP servers and hooks as a map (text, Mermaid, Graphviz dot or JSON).",
     "  import    Index existing AGENTS.md/CLAUDE.md/Cursor rules and MCP server names for agents to read.",
     "  lint      Validate the catalog: manifest sync, front matter, hashes, permissions, skill references.",
     "  check     Report drift between installed files and the catalog (exit 1 on drift).",
@@ -181,6 +186,20 @@ export function parseCommandArgs(args: string[]): CommandResult {
     const extra = args.slice(1).filter((arg) => arg !== "--dry-run" && arg !== "--json");
     if (extra.length) return { kind: "error", message: `Unknown option '${extra[0]}'.` };
     return { kind: "import", dryRun: args.includes("--dry-run"), json: args.includes("--json") };
+  }
+  if (command === "map") {
+    const rest = args.slice(1);
+    for (let i = 0; i < rest.length; i++) {
+      if (rest[i] !== "--format" && rest[i] !== "--platform") return { kind: "error", message: `Unknown option '${rest[i]}'.` };
+      if (!rest[i + 1] || rest[i + 1].startsWith("--")) return { kind: "error", message: `${rest[i]} requires a value.` };
+      i++;
+    }
+    const format = option(args, "--format") ?? "text";
+    if (!["text", "mermaid", "dot", "json"].includes(format)) return { kind: "error", message: `Invalid format '${format}'; use text, mermaid, dot or json.` };
+    const chosen = option(args, "--platform");
+    if (chosen === undefined) return { kind: "map", format: format as "text" };
+    const platform = validPlatform(chosen);
+    return typeof platform === "string" ? { kind: "map", format: format as "text", platform } : platform;
   }
   if (command === "hook") {
     if (args.length === 2 && args[1] === "engram-stop") return { kind: "hook", name: "engram-stop" };

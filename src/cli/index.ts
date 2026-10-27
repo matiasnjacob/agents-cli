@@ -24,6 +24,7 @@ import {runEngramStopHook} from '../hooks/engram-stop.js';
 import {importExisting,formatImport} from '../setup/import.js';
 import {uninstall,formatUninstall,revert,formatRevert,listBackups} from '../setup/uninstall.js';
 import {confirm,isCancel} from '@clack/prompts';
+import {buildMap,formatMap,renderMermaid,renderDot} from '../setup/map.js';
 import {decisionCommand} from '../decision/cli.js';
 
 const result = parseCommandArgs(process.argv.slice(2));
@@ -89,6 +90,12 @@ try {
   } else if (result.kind === "import") {
     const report = await importExisting(process.cwd(), catalogRoot, { dryRun: result.dryRun });
     console.log(result.json || !process.stdout.isTTY ? JSON.stringify(report, null, 2) : formatImport(report, createStyle()));
+  } else if (result.kind === "map") {
+    const map = await buildMap(process.cwd(), catalogRoot, result.platform);
+    if (result.format === "mermaid") console.log(renderMermaid(map));
+    else if (result.format === "dot") console.log(renderDot(map));
+    else if (result.format === "json" || !process.stdout.isTTY && result.format === "text") console.log(JSON.stringify(map, null, 2));
+    else console.log(formatMap(map, createStyle()));
   } else if (result.kind === "check") {
     const drift = await checkSetup(process.cwd(), catalogRoot);
     console.log(result.json || !process.stdout.isTTY ? JSON.stringify(drift, null, 2) : formatDrift(drift, createStyle()));

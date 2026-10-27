@@ -5,6 +5,12 @@ All notable changes to `agents-cli` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and releases use semantic versioning.
 
+## Unreleased
+
+- Add `agents-cli map`: a read-only map of the installed agents, skills, MCP servers and managed hooks with token weight and broken-link checks, as text, Mermaid, Graphviz dot or JSON.
+- Reword two catalog agent sentences (the optional `.agents/imported.md` index and the temporary-directory rule) so third-party markdown graph tools do not read them as broken file links.
+- Document how to inspect an installed harness with skill-map in `docs/map.md`.
+
 ## 0.8.2 — prepared for release
 
 - Decision support (`shadow`/`assist`) now implies the `jev` MCP on native platforms and always adds its API key variable to `.env`, including on Pi and when a config file did not list `jev`; `resolveConfig` no longer mutates its input.
